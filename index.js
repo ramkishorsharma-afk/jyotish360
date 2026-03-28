@@ -16,9 +16,6 @@ const razorpay = new Razorpay({
 });
 
 // ✅ FREE READING API
-app.get('/', (req, res) => {
-    res.send('Jyotish360 is running 🚀');
-});
 app.post('/generate', async (req, res) => {
     const { name, dob, place } = req.body;
 
