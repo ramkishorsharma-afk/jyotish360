@@ -1,65 +1,117 @@
-const axios = require('axios');
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const Razorpay = require('razorpay');
 
-// 🔑 Get Access Token
-async function getAccessToken() {
+const { getKundali } = require('./astro');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+// ===============================
+// 🔮 GENERATE ASTROLOGY READING
+// ===============================
+app.post('/generate', async (req, res) => {
     try {
-        const response = await axios.post(
-            'https://api.prokerala.com/token',
-            new URLSearchParams({
-                grant_type: 'client_credentials',
-                client_id: process.env.PROKERALA_CLIENT_ID,
-                client_secret: process.env.PROKERALA_CLIENT_SECRET
-            }),
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            }
-        );
+        const { name, dob, time, place } = req.body;
 
-        return response.data.access_token;
+        if (!dob || !time || !place) {
+            return res.json({
+                success: false,
+                message: "All fields are required"
+            });
+        }
 
-    } catch (error) {
-        console.log("TOKEN ERROR:", error.response?.data || error.message);
-        return null;
-    }
-}
+        // 👉 TEMP location (we fix dynamic later)
+        const lat = 29.5;
+        const lon = 75.0;
 
-// 🔮 Get Planet Data
-async function getKundali(dob, time, lat, lon) {
-    try {
-        const token = await getAccessToken();
+        const kundali = await getKundali(dob, time, lat, lon);
 
-        if (!token) return null;
+        if (!kundali || !kundali.planet_position) {
+            return res.json({
+                success: false,
+                message: "Astrology API failed"
+            });
+        }
 
-        const formattedDateTime = formatDateTime(dob, time);
+        const planets = kundali.planet_position;
 
-        const response = await axios.get(
-            'https://api.prokerala.com/v2/astrology/planet-position',
-            {
-                params: {
-                    ayanamsa: 1,
-                    coordinates: `${lat},${lon}`,
-                    datetime: formattedDateTime
+        // 🌙 Moon + ☀️ Sun
+        const moon = planets.find(p => p.name === "Moon");
+        const sun = planets.find(p => p.name === "Sun");
+
+        // 🌟 Nakshatra
+        const nakshatra = moon?.nakshatra?.name || "Unknown";
+        const pada = moon?.nakshatra?.pada || "";
+
+        // 🪐 Planets list
+        const planetList = planets.map(p => ({
+            name: p.name,
+            sign: p.sign?.name || "Unknown"
+        }));
+
+        // 🔮 Prediction
+        let pastLife = "";
+
+        if (moon) {
+            pastLife += `Your Moon in ${moon.sign?.name} and Nakshatra ${nakshatra} shows emotional karmic patterns. `;
+        }
+
+        if (sun) {
+            pastLife += `Your Sun in ${sun.sign?.name} indicates your soul carried responsibilities in past life. `;
+        }
+
+        if (!pastLife) {
+            pastLife = "Astrological insight could not be generated.";
+        }
+
+        res.json({
+            success: true,
+            data: {
+                kundali: {
+                    moonSign: moon?.sign?.name || "Unknown",
+                    sunSign: sun?.sign?.name || "Unknown",
+                    nakshatra: nakshatra,
+                    pada: pada,
+                    lagna: "Coming Next Step 🔥", // placeholder
+                    planets: planetList
                 },
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                pastLife,
+                last2Hours: "Recent Moon transit shows slight mental fluctuations.",
+                next2Hours: "LOCKED"
             }
-        );
-
-        return response.data.data;
+        });
 
     } catch (error) {
-        console.log("API ERROR:", error.response?.data || error.message);
-        return null;
+        console.error("ERROR:", error);
+        res.json({
+            success: false,
+            message: "Server error"
+        });
     }
-}
+});
 
-// 🛠️ Format Date
-function formatDateTime(dob, time) {
-    const [day, month, year] = dob.split('-');
-    return `${year}-${month}-${day}T${time}:00+05:30`;
-}
+// ===============================
+// 💰 PAYMENT
+// ===============================
+app.post('/create-order', async (req, res) => {
+    const order = await razorpay.orders.create({
+        amount: 900,
+        currency: "INR"
+    });
+    res.json(order);
+});
 
-module.exports = { getKundali };
+// ===============================
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log("Server running on port " + PORT);
+});
