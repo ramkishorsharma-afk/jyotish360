@@ -1,24 +1,90 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Jyotish360</title>
+    <title>Jyotish360 🔮</title>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: auto;
+            background: rgba(255,255,255,0.05);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: none;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            background: gold;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .result-box {
+            margin-top: 20px;
+            text-align: left;
+            background: rgba(0,0,0,0.4);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .locked {
+            color: orange;
+        }
+
+        .unlock-btn {
+            background: #ff9800;
+            margin-top: 10px;
+        }
+
+    </style>
 </head>
+
 <body>
 
-<h2>Jyotish360 🔮</h2>
+<div class="container">
 
-<input id="name" placeholder="Enter Name"><br><br>
-<input id="dob" placeholder="Date of Birth"><br><br>
-<input id="place" placeholder="Place"><br><br>
+    <h2>🔮 Jyotish360</h2>
 
-<button onclick="generate()">Get My Reading</button>
+    <input id="name" placeholder="Your Name">
+    <input id="dob" placeholder="Date of Birth">
+    <input id="place" placeholder="Place of Birth">
 
-<div id="result" style="margin-top:20px;"></div>
+    <button onclick="generate()">✨ Reveal My Destiny</button>
 
-<button onclick="pay()">Unlock Next 2 Hours 🔒 ₹9</button>
+    <div id="result" class="result-box"></div>
+
+</div>
 
 <script>
 async function generate() {
+
+    document.getElementById('result').innerHTML = "🔄 Reading your karmic patterns...";
+
     const res = await fetch('/generate', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -32,14 +98,16 @@ async function generate() {
     const data = await res.json();
 
     document.getElementById('result').innerHTML = `
-        <h3>Past Life Insight:</h3>
+        <h3>🌌 Past Life Insight</h3>
         <p>${data.data.pastLife}</p>
 
-        <h3>Last 2 Hours:</h3>
+        <h3>⏳ Last 2 Hours</h3>
         <p>${data.data.last2Hours}</p>
 
-        <h3>Next 2 Hours:</h3>
-        <p>🔒 Locked</p>
+        <h3>🔮 Next 2 Hours</h3>
+        <p class="locked">🔒 Locked — Your future is hidden</p>
+
+        <button class="unlock-btn" onclick="pay()">Unlock Now ₹9</button>
     `;
 }
 
@@ -53,7 +121,7 @@ async function pay() {
         currency: order.currency,
         order_id: order.id,
         handler: function () {
-            alert("Payment successful! 🔥");
+            alert("✨ Your destiny is now revealed!");
         }
     };
 
