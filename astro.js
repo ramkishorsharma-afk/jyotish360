@@ -19,7 +19,8 @@ async function getKundali(dob, time, lat, lon) {
     try {
         const token = await getAccessToken();
 
-        // ✅ Convert to proper ISO format
+        console.log("TOKEN:", token); // 👈 ADD THIS LINE
+
         const formattedDateTime = formatDateTime(dob, time);
 
         const response = await axios.get(
