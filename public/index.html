@@ -1,87 +1,83 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Jyotish360</title>
+    <title>Jyotish360 🔮</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            width: 250px;
+        }
+        .card {
+            background: #1e293b;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+    </style>
 </head>
 <body>
 
-<h2>Jyotish360 🔮</h2>
+<h2>🔮 Jyotish360</h2>
 
-<input id="name" placeholder="Name"><br><br>
-<input id="dob" placeholder="DOB (DD-MM-YYYY)"><br><br>
-<input id="time" placeholder="Time (HH:MM 24hr)"><br><br>
-<input id="place" placeholder="Place"><br><br>
+<input id="name" placeholder="Name"><br>
+<input id="dob" placeholder="DOB (DD-MM-YYYY)"><br>
+<input id="time" placeholder="Time (HH:MM)"><br>
+<input id="place" placeholder="Place"><br>
 
-<button onclick="generate()">Get Reading</button>
+<button onclick="generate()">✨ Reveal My Destiny</button>
 
 <div id="result"></div>
 
-<button onclick="pay()">Unlock Next 2 Hours (₹9)</button>
-
 <script>
 async function generate() {
-
-    const name = document.getElementById('name').value;
-    const dob = document.getElementById('dob').value;
-    const time = document.getElementById('time').value;
-    const place = document.getElementById('place').value;
-
-    if (!dob || !time) {
-        alert("Please enter DOB and Time correctly");
-        return;
-    }
-
     const res = await fetch('/generate', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-            name,
-            dob,
-            time,
-            place
+            name: document.getElementById('name').value,
+            dob: document.getElementById('dob').value,
+            time: document.getElementById('time').value,
+            place: document.getElementById('place').value
         })
     });
 
     const data = await res.json();
 
     if (!data.success) {
-        document.getElementById('result').innerHTML =
-            `<p style="color:red;">${data.message}</p>`;
+        document.getElementById('result').innerHTML = data.message;
         return;
     }
 
-    document.getElementById('result').innerHTML =
-        `<h3>🔮 Past Life Insight</h3>
-         <p>${data.data.pastLife}</p>
+    const k = data.data.kundali;
 
-         <h3>⏳ Last 2 Hours</h3>
-         <p>${data.data.last2Hours}</p>
+    document.getElementById('result').innerHTML = `
+    <div class="card">
+        <h3>📊 Kundali</h3>
+        Moon: ${k.moonSign}<br>
+        Sun: ${k.sunSign}<br>
+        Nakshatra: ${k.nakshatra} (Pada ${k.pada})<br>
+    </div>
 
-         <h3>🔒 Next 2 Hours</h3>
-         <p>Locked 🔐</p>`;
-}
+    <div class="card">
+        <h3>🪐 Planets</h3>
+        ${k.planets.map(p => `${p.name} → ${p.sign}`).join('<br>')}
+    </div>
 
-async function pay() {
-    const res = await fetch('/create-order', { method: 'POST' });
-    const order = await res.json();
-
-    const options = {
-        key: "YOUR_KEY_ID",
-        amount: order.amount,
-        currency: order.currency,
-        name: "Jyotish360",
-        order_id: order.id,
-        handler: function (response){
-            alert("Payment Success! 🚀");
-        }
-    };
-
-    const rzp = new Razorpay(options);
-    rzp.open();
+    <div class="card">
+        <h3>🔮 Insight</h3>
+        ${data.data.pastLife}
+    </div>
+    `;
 }
 </script>
-
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 </body>
 </html>
