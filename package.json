@@ -1,20 +1,16 @@
 {
-  "name": "backend",
+  "name": "jyotish360",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "openai": "^4.0.0",
-    "cors": "^2.8.6",
-    "dotenv": "^17.3.1",
-    "express": "^5.2.1",
-    "razorpay": "^2.9.6"
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "@google/generative-ai": "^0.24.1",
+    "razorpay": "^2.9.0",
+    "openai": "^4.0.0"
   }
 }
