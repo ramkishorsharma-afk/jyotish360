@@ -1,15 +1,18 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const OpenAI = require("openai");
 require('dotenv').config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const client = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 async function interpretKarmicSymptoms(symptoms, planetData) {
-    try {
-        const model = genAI.getGenerativeModel({
-            model: "models/gemini-1.5-flash"
-        });
-
-        const prompt = `
+  try {
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "user",
+          content: `
 You are a mystical Vedic astrologer.
 
 DOB: ${planetData.dob}
@@ -21,15 +24,17 @@ Write:
 - Current struggle
 
 Keep it under 60 words and very personal.
-`;
+`
+        }
+      ],
+    });
 
-        const result = await model.generateContent(prompt);
-        return result.response.text();
+    return response.choices[0].message.content;
 
-    } catch (error) {
-        console.error(error);
-        return "AI Error: Try again later";
-    }
+  } catch (error) {
+    console.error(error);
+    return "AI Error: Try again later";
+  }
 }
 
 module.exports = { interpretKarmicSymptoms };
