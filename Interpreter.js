@@ -32,9 +32,9 @@ Keep it under 60 words and very personal.
     return response.choices[0].message.content;
 
   } catch (error) {
-    console.error(error);
-    return "AI Error: Try again later";
-  }
+    console.error("FULL ERROR:", error);
+    return "AI Error: " + error.message;
+}
 }
 
 module.exports = { interpretKarmicSymptoms };
