@@ -57,17 +57,17 @@ app.post('/generate', async (req, res) => {
         // ===============================
         let pastLife = "";
 
-        if (moon) {
-            pastLife += `Your Moon in ${moon.sign} shows deep emotional karmic patterns. `;
-        }
+if (moon) {
+    pastLife += `Your Moon in ${moon.sign_name || "unknown"} shows deep emotional karmic patterns. `;
+}
 
-        if (sun) {
-            pastLife += `Your Sun in ${sun.sign} indicates your soul carried responsibilities in past life. `;
-        }
+if (sun) {
+    pastLife += `Your Sun in ${sun.sign_name || "unknown"} indicates your soul carried responsibilities in past life. `;
+}
 
-        if (!pastLife) {
-            pastLife = "Astrological insight could not be generated.";
-        }
+if (!pastLife) {
+    pastLife = "Astrological insight could not be generated.";
+}
 
         // ⏳ Last 2 hours logic
         let last2Hours = "You felt mentally stable with slight emotional fluctuations.";
