@@ -41,9 +41,9 @@ async function getKundali(dob, time, lat, lon) {
         return response.data.data;
 
     } catch (error) {
-        console.log("API ERROR:", error.response?.data || error.message);
-        return null;
-    }
+    console.log("FULL ERROR:", error.response?.data || error.message);
+    return null;
+}
 }
 
 // 🛠️ Format DOB + Time properly
