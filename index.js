@@ -44,8 +44,24 @@ app.post('/generate', async (req, res) => {
         }
 
         // 🌙 Extract planets
-        const moon = kundali.find(p => p.name === "Moon");
-        const sun = kundali.find(p => p.name === "Sun");
+        const kundali = await getKundali(dob, time, 29.5, 75.0);
+
+if (!kundali || !kundali.planet_position) {
+    return res.json({
+        success: false,
+        message: "Astrology API failed"
+    });
+}
+
+const planets = kundali.planet_position;
+
+const moon = planets.find(p => p.name === "Moon");
+const sun = planets.find(p => p.name === "Sun");
+
+const pastLife = `
+Moon is in ${moon?.sign || "unknown"}.
+Sun is in ${sun?.sign || "unknown"}.
+`;
 
         let pastLife = "";
 
