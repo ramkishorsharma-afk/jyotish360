@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const Razorpay = require('razorpay');
 
-// ✅ Use Prokerala API
+// 🔮 Real astrology API
 const { getKundali } = require('./astro');
 
 const app = express();
@@ -17,73 +17,77 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// 🔮 Generate Astrology Reading
+// ===============================
+// 🔮 GENERATE ASTROLOGY READING
+// ===============================
 app.post('/generate', async (req, res) => {
     try {
         const { name, dob, time, place } = req.body;
 
-        if (!dob || !time) {
+        // ❗ Basic validation
+        if (!dob || !time || !place) {
             return res.json({
                 success: false,
-                message: "Date and Time of Birth are required"
+                message: "All fields are required"
             });
         }
 
-        // 📍 Temporary fixed coordinates (we improve later)
-        const lat = 29.39;
-        const lon = 76.96;
+        // 👉 Temporary fixed coordinates (later we make dynamic)
+        const lat = 29.5;
+        const lon = 75.0;
 
-        // 🔮 Get real kundali data
+        // 🔮 Call Prokerala API
         const kundali = await getKundali(dob, time, lat, lon);
 
-        if (!kundali) {
+        if (!kundali || !kundali.planet_position) {
             return res.json({
                 success: false,
                 message: "Astrology API failed"
             });
         }
 
-        // 🌙 Extract planets
-        const kundali = await getKundali(dob, time, 29.5, 75.0);
+        const planets = kundali.planet_position;
 
-if (!kundali || !kundali.planet_position) {
-    return res.json({
-        success: false,
-        message: "Astrology API failed"
-    });
-}
+        // 🌙 Find planets
+        const moon = planets.find(p => p.name === "Moon");
+        const sun = planets.find(p => p.name === "Sun");
 
-const planets = kundali.planet_position;
-
-const moon = planets.find(p => p.name === "Moon");
-const sun = planets.find(p => p.name === "Sun");
-
-const pastLife = `
-Moon is in ${moon?.sign || "unknown"}.
-Sun is in ${sun?.sign || "unknown"}.
-`;
-
+        // ===============================
+        // 🔮 REAL ASTROLOGY TEXT
+        // ===============================
         let pastLife = "";
 
         if (moon) {
-            pastLife += `Your Moon in ${moon.sign} reflects emotional karmic patterns. `;
+            pastLife += `Your Moon in ${moon.sign} shows deep emotional karmic patterns. `;
         }
 
         if (sun) {
-            pastLife += `Your Sun in ${sun.sign} shows your soul’s past responsibilities.`;
+            pastLife += `Your Sun in ${sun.sign} indicates your soul carried responsibilities in past life. `;
+        }
+
+        if (!pastLife) {
+            pastLife = "Astrological insight could not be generated.";
+        }
+
+        // ⏳ Last 2 hours logic
+        let last2Hours = "You felt mentally stable with slight emotional fluctuations.";
+
+        if (moon && moon.sign === "Scorpio") {
+            last2Hours = "Recently you felt intense emotions and overthinking.";
         }
 
         res.json({
             success: true,
             data: {
                 pastLife,
-                last2Hours: "Based on Moon transit, your mind was slightly restless recently.",
+                last2Hours,
                 next2Hours: "LOCKED"
             }
         });
 
     } catch (error) {
         console.error("ERROR:", error);
+
         res.json({
             success: false,
             message: "Server error"
@@ -91,11 +95,14 @@ Sun is in ${sun?.sign || "unknown"}.
     }
 });
 
-// 💰 Create Payment Order
+
+// ===============================
+// 💰 PAYMENT ORDER
+// ===============================
 app.post('/create-order', async (req, res) => {
     try {
         const options = {
-            amount: 900,
+            amount: 900, // ₹9
             currency: "INR",
             receipt: "order_rcptid_11"
         };
@@ -109,7 +116,10 @@ app.post('/create-order', async (req, res) => {
     }
 });
 
-// 🚀 Server Start
+
+// ===============================
+// 🚀 SERVER START
+// ===============================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
