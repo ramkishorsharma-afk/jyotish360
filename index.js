@@ -15,7 +15,7 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// ✅ FREE READING API
+// ✅ API: Generate Reading
 app.post('/generate', async (req, res) => {
     const { name, dob, place } = req.body;
 
@@ -34,7 +34,7 @@ app.post('/generate', async (req, res) => {
     });
 });
 
-// ✅ CREATE PAYMENT ORDER
+// ✅ API: Create Razorpay Order
 app.post('/create-order', async (req, res) => {
     const options = {
         amount: 900, // ₹9
@@ -45,6 +45,7 @@ app.post('/create-order', async (req, res) => {
     const order = await razorpay.orders.create(options);
     res.json(order);
 });
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
