@@ -2,16 +2,27 @@ const axios = require('axios');
 
 // 🔑 Step 1: Get Access Token
 async function getAccessToken() {
-    const response = await axios.post(
-        'https://api.prokerala.com/token',
-        new URLSearchParams({
-            grant_type: 'client_credentials',
-            client_id: process.env.PROKERALA_CLIENT_ID,
-            client_secret: process.env.PROKERALA_CLIENT_SECRET
-        })
-    );
+    try {
+        const response = await axios.post(
+            'https://api.prokerala.com/token',
+            new URLSearchParams({
+                grant_type: 'client_credentials',
+                client_id: process.env.PROKERALA_CLIENT_ID,
+                client_secret: process.env.PROKERALA_CLIENT_SECRET
+            }),
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
 
-    return response.data.access_token;
+        return response.data.access_token;
+
+    } catch (error) {
+        console.log("TOKEN ERROR:", error.response?.data || error.message);
+        return null;
+    }
 }
 
 // 🔮 Step 2: Get Kundali Data
@@ -19,12 +30,17 @@ async function getKundali(dob, time, lat, lon) {
     try {
         const token = await getAccessToken();
 
-        console.log("TOKEN:", token); // 👈 ADD THIS LINE
+        if (!token) {
+            console.log("No token received");
+            return null;
+        }
+
+        console.log("TOKEN:", token);
 
         const formattedDateTime = formatDateTime(dob, time);
 
         const response = await axios.get(
-            'https://api.prokerala.com/v2/astrology/planets',
+            'https://api.prokerala.com/v2/astrology/planet-position', // ✅ FIXED URL
             {
                 params: {
                     ayanamsa: 1,
@@ -42,9 +58,9 @@ async function getKundali(dob, time, lat, lon) {
         return response.data.data;
 
     } catch (error) {
-    console.log("FULL ERROR:", error.response?.data || error.message);
-    return null;
-}
+        console.log("FULL ERROR:", error.response?.data || error.message);
+        return null;
+    }
 }
 
 // 🛠️ Format DOB + Time properly
