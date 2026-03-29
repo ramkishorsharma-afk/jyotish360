@@ -43,7 +43,7 @@ app.post('/generate', async (req, res) => {
         }
 
         const planets = kundali.planet_position;
-
+console.log("PLANETS DATA:", JSON.stringify(planets, null, 2));
         // 🌙 Moon + ☀️ Sun
        const moon = planets.find(p => p.name === "Moon");
        const sun = planets.find(p => p.name === "Sun");
