@@ -6,8 +6,8 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 async function interpretKarmicSymptoms(symptoms, planetData) {
     try {
         const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-pro"
-});
+            model: "gemini-pro"
+        });
 
         const prompt = `
 You are a mystical Vedic astrologer.
@@ -27,6 +27,7 @@ Keep it under 60 words and very personal.
         return result.response.text();
 
     } catch (error) {
+        console.error(error);
         return "Error: " + error.message;
     }
 }
