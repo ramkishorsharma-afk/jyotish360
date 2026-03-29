@@ -74,21 +74,21 @@ const pada = moon?.pada || "";
         }
 
         res.json({
-            success: true,
-            data: {
-                kundali: {
-                    moonSign: moon?.sign?.name || "Unknown",
-                    sunSign: sun?.sign?.name || "Unknown",
-                    nakshatra: nakshatra,
-                    pada: pada,
-                    lagna: "Coming Next Step 🔥", // placeholder
-                    planets: planetList
-                },
-                pastLife,
-                last2Hours: "Recent Moon transit shows slight mental fluctuations.",
-                next2Hours: "LOCKED"
-            }
-        });
+    success: true,
+    data: {
+        kundali: {
+            moonSign: moon?.rasi || "Unknown",
+            sunSign: sun?.rasi || "Unknown",
+            nakshatra: nakshatra,
+            pada: pada,
+            lagna: "Coming Next Step 🔥",
+            planets: planetList
+        },
+        pastLife,
+        last2Hours: "Recent Moon transit shows slight mental fluctuations.",
+        next2Hours: "LOCKED"
+    }
+});
 
     } catch (error) {
         console.error("ERROR:", error);
