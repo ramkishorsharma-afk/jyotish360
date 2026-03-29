@@ -6,7 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 async function interpretKarmicSymptoms(symptoms, planetData) {
     try {
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash-001"
+            model: "models/gemini-1.5-flash"
         });
 
         const prompt = `
@@ -23,20 +23,12 @@ Write:
 Keep it under 60 words and very personal.
 `;
 
-        const result = await model.generateContent({
-            contents: [
-                {
-                    role: "user",
-                    parts: [{ text: prompt }]
-                }
-            ]
-        });
-
+        const result = await model.generateContent(prompt);
         return result.response.text();
 
     } catch (error) {
-        console.error("Gemini Error:", error);
-        return "AI Error: Please try again later.";
+        console.error(error);
+        return "AI Error: Try again later";
     }
 }
 
