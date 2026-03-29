@@ -11,40 +11,44 @@ async function interpretKarmicSymptoms(symptoms, planetData) {
             },
             body: JSON.stringify({
                 model: "mistralai/mistral-7b-instruct",
-                messages: [
-                    {
-                        role: "user",
-                        content: `
+                messages: [{
+                    role: "user",
+                    content: `
 You are a mystical Vedic astrologer.
 
 DOB: ${planetData.dob}
 Place: ${planetData.place}
 
-Write:
-- Past life karma
-- Emotional traits
-- Current struggle
-
-Keep it under 60 words and very personal.
+Give a short past life insight in 40 words.
 `
-                    }
-                ]
+                }]
             })
         });
 
         const data = await response.json();
-        console.log("API RESPONSE:", data);
 
         if (data.choices && data.choices.length > 0) {
             return data.choices[0].message.content;
-        } else {
-            return "AI is busy. Try again in a moment.";
         }
 
     } catch (error) {
-        console.error(error);
-        return "AI Error: Try again later";
+        console.log("AI failed, using fallback");
     }
+
+    return generateFallbackReading(planetData);
+}
+
+// 🔥 Fallback (Always works)
+function generateFallbackReading(planetData) {
+    const insights = [
+        "In past life, you carried deep responsibility. Emotional burdens still follow you.",
+        "You were connected to leadership or authority. Now learning balance and patience.",
+        "Your soul has seen struggle before. This life is about healing and growth.",
+        "Past karmas show strong emotional ties. You often feel things deeply.",
+        "You had unfinished duties. This life pushes you toward completion."
+    ];
+
+    return insights[Math.floor(Math.random() * insights.length)];
 }
 
 module.exports = { interpretKarmicSymptoms };
