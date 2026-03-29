@@ -1,18 +1,20 @@
-const OpenAI = require("openai");
+const fetch = require("node-fetch");
 require('dotenv').config();
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 async function interpretKarmicSymptoms(symptoms, planetData) {
-  try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "user",
-          content: `
+    try {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "mistralai/mistral-7b-instruct", // FREE model
+                messages: [
+                    {
+                        role: "user",
+                        content: `
 You are a mystical Vedic astrologer.
 
 DOB: ${planetData.dob}
@@ -25,16 +27,18 @@ Write:
 
 Keep it under 60 words and very personal.
 `
-        }
-      ],
-    });
+                    }
+                ]
+            })
+        });
 
-    return response.choices[0].message.content;
+        const data = await response.json();
+        return data.choices[0].message.content;
 
-  } catch (error) {
-    console.error("FULL ERROR:", error);
-    return "AI Error: " + error.message;
-}
+    } catch (error) {
+        console.error(error);
+        return "AI Error: Try again later";
+    }
 }
 
 module.exports = { interpretKarmicSymptoms };
