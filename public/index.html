@@ -1,114 +1,64 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Jyotish360 🔮</title>
-
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 400px;
-            margin: auto;
-            background: rgba(255,255,255,0.05);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(255,255,255,0.1);
-        }
-
-        h2 {
-            margin-bottom: 20px;
-        }
-
-        input {
-            width: 90%;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 8px;
-            border: none;
-        }
-
-        button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 10px;
-            background: gold;
-            color: black;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .result-box {
-            margin-top: 20px;
-            text-align: left;
-            background: rgba(0,0,0,0.4);
-            padding: 15px;
-            border-radius: 10px;
-        }
-
-        .locked {
-            color: orange;
-        }
-
-        .unlock-btn {
-            background: #ff9800;
-            margin-top: 10px;
-        }
-
-    </style>
+    <title>Jyotish360</title>
 </head>
-
 <body>
 
-<div class="container">
+<h2>Jyotish360 🔮</h2>
 
-    <h2>🔮 Jyotish360</h2>
+<input id="name" placeholder="Name"><br><br>
+<input id="dob" placeholder="DOB (DD-MM-YYYY)"><br><br>
+<input id="time" placeholder="Time (HH:MM 24hr)"><br><br>
+<input id="place" placeholder="Place"><br><br>
 
-    <input id="name" placeholder="Your Name">
-    <input id="dob" placeholder="Date of Birth">
-    <input id="place" placeholder="Place of Birth">
-<input id="time" placeholder="Time of Birth (HH:MM)">
-    <button onclick="generate()">✨ Reveal My Destiny</button>
+<button onclick="generate()">Get Reading</button>
 
-    <div id="result" class="result-box"></div>
+<div id="result"></div>
 
-</div>
+<button onclick="pay()">Unlock Next 2 Hours (₹9)</button>
 
 <script>
 async function generate() {
 
-    document.getElementById('result').innerHTML = "🔄 Reading your karmic patterns...";
+    const name = document.getElementById('name').value;
+    const dob = document.getElementById('dob').value;
+    const time = document.getElementById('time').value;
+    const place = document.getElementById('place').value;
+
+    if (!dob || !time) {
+        alert("Please enter DOB and Time correctly");
+        return;
+    }
 
     const res = await fetch('/generate', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-            name: document.getElementById('name').value,
-            dob: document.getElementById('dob').value,
-            place: document.getElementById('place').value
+            name,
+            dob,
+            time,
+            place
         })
     });
 
     const data = await res.json();
 
-    document.getElementById('result').innerHTML = `
-        <h3>🌌 Past Life Insight</h3>
-        <p>${data.data.pastLife}</p>
+    if (!data.success) {
+        document.getElementById('result').innerHTML =
+            `<p style="color:red;">${data.message}</p>`;
+        return;
+    }
 
-        <h3>⏳ Last 2 Hours</h3>
-        <p>${data.data.last2Hours}</p>
+    document.getElementById('result').innerHTML =
+        `<h3>🔮 Past Life Insight</h3>
+         <p>${data.data.pastLife}</p>
 
-        <h3>🔮 Next 2 Hours</h3>
-        <p class="locked">🔒 Locked — Your future is hidden</p>
+         <h3>⏳ Last 2 Hours</h3>
+         <p>${data.data.last2Hours}</p>
 
-        <button class="unlock-btn" onclick="pay()">Unlock Now ₹9</button>
-    `;
+         <h3>🔒 Next 2 Hours</h3>
+         <p>Locked 🔐</p>`;
 }
 
 async function pay() {
@@ -116,12 +66,13 @@ async function pay() {
     const order = await res.json();
 
     const options = {
-        key: "YOUR_RAZORPAY_KEY",
+        key: "YOUR_KEY_ID",
         amount: order.amount,
         currency: order.currency,
+        name: "Jyotish360",
         order_id: order.id,
-        handler: function () {
-            alert("✨ Your destiny is now revealed!");
+        handler: function (response){
+            alert("Payment Success! 🚀");
         }
     };
 
