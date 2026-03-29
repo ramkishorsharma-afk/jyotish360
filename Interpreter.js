@@ -10,7 +10,7 @@ async function interpretKarmicSymptoms(symptoms, planetData) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "mistralai/mistral-7b-instruct", // FREE model
+                model: "mistralai/mistral-7b-instruct",
                 messages: [
                     {
                         role: "user",
@@ -33,7 +33,13 @@ Keep it under 60 words and very personal.
         });
 
         const data = await response.json();
-        return data.choices[0].message.content;
+        console.log("API RESPONSE:", data);
+
+        if (data.choices && data.choices.length > 0) {
+            return data.choices[0].message.content;
+        } else {
+            return "AI is busy. Try again in a moment.";
+        }
 
     } catch (error) {
         console.error(error);
