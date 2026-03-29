@@ -45,28 +45,28 @@ app.post('/generate', async (req, res) => {
         const planets = kundali.planet_position;
 
         // 🌙 Moon + ☀️ Sun
-       const moon = planets.find(p => p.planet === "Moon");
-const sun = planets.find(p => p.planet === "Sun");
+       const moon = planets.find(p => p.name === "Moon");
+       const sun = planets.find(p => p.name === "Sun");
+
+const planetList = planets.map(p => ({
+    name: p.name,
+    sign: p.rasi || "Unknown"
+}));
 
         // 🌟 Nakshatra
         const nakshatra = moon?.nakshatra || "Unknown";
 const pada = moon?.pada || "";
 
-        // 🪐 Planets list
-        const planetList = planets.map(p => ({
-    name: p.planet,
-    sign: p.sign || "Unknown"
-}));
-
+   
         // 🔮 Prediction
         let pastLife = "";
 
         if (moon) {
-            pastLife += `Your Moon in ${moon.sign} and Nakshatra ${nakshatra} shows emotional karmic patterns. `;
+            pastLife += `Your Moon in ${moon.rasi} and Nakshatra ${nakshatra} shows emotional karmic patterns. `;
         }
 
         if (sun) {
-            pastLife += `Your Sun in ${sun.sign?.name} indicates your soul carried responsibilities in past life. `;
+            pastLife += `Your Sun in ${sun.rasi} indicates your soul carried responsibilities in past life. `;
         }
 
         if (!pastLife) {
