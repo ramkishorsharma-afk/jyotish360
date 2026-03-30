@@ -3,6 +3,19 @@ const { interpretKarmicReading } = require('./interpreter');
 
 // 2. Inside your app.post('/generate')
 const kundali = await getKundali(dob, time, lat, lon);
+app.post('/generate', async (req, res) => {
+    try {
+        let { dob, time, place } = req.body;
+
+        // If the date is 31-07-1979, convert it to 1979-07-31
+        if (dob.includes('-') && dob.split('-')[0].length === 2) {
+            const [d, m, y] = dob.split('-');
+            dob = `${y}-${m}-${d}`;
+        }
+        
+        // Now call the astro service with the corrected date
+        const kundali = await getKundali(dob, time, 28.61, 77.20);
+        // ... rest of your code
 
 if (kundali && kundali.planet_position) {
     // Generate the reading using the new logic
