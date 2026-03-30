@@ -37,7 +37,7 @@ app.post('/generate', async (req, res) => {
         const planets = kundali.planet_position;
         
         // Call the Hybrid OpenAI Interpreter
-        const pastLife = await interpretKarmicSymptoms(planets);
+        const aiData = await interpretKarmicSymptoms(planets);
 
         const moon = planets.find(p => p.name.toLowerCase() === "moon");
 
