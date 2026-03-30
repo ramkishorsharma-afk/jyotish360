@@ -43,10 +43,10 @@ app.post('/generate', async (req, res) => {
         const sun = planets.find(p => p.name.toLowerCase() === "sun");
 
         const planetList = planets.map(p => ({
-            name: p.name,
-            sign: p.rasi || p.sign || "Unknown", // Checks both common names
-            house: p.house || "N/A"
-        }));
+    name: p.name,
+    sign: p.rasi.name, // Prokerala nests the name inside a 'rasi' object
+    degree: p.degree
+}));
 
         const nakshatra = moon?.nakshatra || "Unknown";
         const pada = moon?.pada || "";
