@@ -56,7 +56,7 @@ data.data.kundali.planets.forEach(p => {
 
         // ✅ FIXED: pass dob + use correct variable
         const karma = await interpretKarmicSymptoms(planets, dob);
-
+        console.log("🔥 KARMA DATA:", karma);
         const moon = planets.find(
             p => p.name.toLowerCase() === "moon"
         );
