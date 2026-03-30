@@ -1,54 +1,49 @@
-const fetch = require("node-fetch");
-require('dotenv').config();
+/**
+ * Jyotish360 - interpreter.js
+ * Optimized for Prokerala API Planet Data
+ */
 
-async function interpretKarmicSymptoms(symptoms, planetData) {
+function interpretKarmicReading(planets) {
     try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                model: "mistralai/mistral-7b-instruct",
-                messages: [{
-                    role: "user",
-                    content: `
-You are a mystical Vedic astrologer.
-
-DOB: ${planetData.dob}
-Place: ${planetData.place}
-
-Give a short past life insight in 40 words.
-`
-                }]
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.choices && data.choices.length > 0) {
-            return data.choices[0].message.content;
+        // Ensure planets is an array before processing
+        if (!Array.isArray(planets)) {
+            return "Your karmic map is currently being recalculated by the stars.";
         }
 
+        // Find key planets using Prokerala's naming convention
+        const moon = planets.find(p => p.name.toLowerCase() === "moon");
+        const sun = planets.find(p => p.name.toLowerCase() === "sun");
+        const saturn = planets.find(p => p.name.toLowerCase() === "saturn");
+        const ketu = planets.find(p => p.name.toLowerCase() === "ketu");
+
+        let reading = "";
+
+        // 🌙 Moon Interpretation (Emotional Karma)
+        if (moon && moon.rasi) {
+            reading += `With your Moon in ${moon.rasi.name}, your previous incarnation was defined by deep emotional lessons and family ties. `;
+        }
+
+        // ☀️ Sun Interpretation (Soul Purpose)
+        if (sun && sun.rasi) {
+            reading += `Your Sun in ${sun.rasi.name} indicates you held a position of spiritual or social authority. `;
+        }
+
+        // 🪐 Saturn/Ketu (Past Life Debt)
+        if (saturn && ketu) {
+            reading += `The alignment of Saturn and Ketu suggests you are here to resolve specific ancestral patterns in this lifetime. `;
+        }
+
+        // Fallback if data is missing
+        if (!reading) {
+            reading = "Your chart reflects a soul that has recently entered a fresh cycle of karmic growth and discovery.";
+        }
+
+        return reading;
+
     } catch (error) {
-        console.log("AI failed, using fallback");
+        console.error("Interpreter Logic Error:", error);
+        return "The Oracle is currently silent. Please check your birth details.";
     }
-
-    return generateFallbackReading(planetData);
 }
 
-// 🔥 Fallback (Always works)
-function generateFallbackReading(planetData) {
-    const insights = [
-        "In past life, you carried deep responsibility. Emotional burdens still follow you.",
-        "You were connected to leadership or authority. Now learning balance and patience.",
-        "Your soul has seen struggle before. This life is about healing and growth.",
-        "Past karmas show strong emotional ties. You often feel things deeply.",
-        "You had unfinished duties. This life pushes you toward completion."
-    ];
-
-    return insights[Math.floor(Math.random() * insights.length)];
-}
-
-module.exports = { interpretKarmicSymptoms };
+module.exports = { interpretKarmicReading };
