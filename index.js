@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const Razorpay = require('razorpay');
 const { getKundali } = require('./astro');
-const { interpretKarmicSymptoms } = require('./interpreter');
+const { interpretKarmicSymptoms } = require('./Interpreter');
 
 const app = express();
 app.use(cors());
