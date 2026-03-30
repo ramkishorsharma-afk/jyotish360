@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const Razorpay = require('razorpay');
-
 const { getKundali } = require('./astro');
 
 const app = express();
@@ -15,103 +14,88 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// ===============================
-// 🔮 GENERATE ASTROLOGY READING
-// ===============================
 app.post('/generate', async (req, res) => {
     try {
         const { name, dob, time, place } = req.body;
 
         if (!dob || !time || !place) {
-            return res.json({
-                success: false,
-                message: "All fields are required"
-            });
+            return res.json({ success: false, message: "All fields are required" });
         }
 
-        // 👉 TEMP location (we fix dynamic later)
-        const lat = 29.5;
-        const lon = 75.0;
+        // TEMP location - suggest getting these from Google Places API later
+        const lat = 28.6139; // Delhi
+        const lon = 77.2090;
 
         const kundali = await getKundali(dob, time, lat, lon);
 
-        if (!kundali || !kundali.planet_position) {
-            return res.json({
-                success: false,
-                message: "Astrology API failed"
-            });
+        // Debugging: This helps you see the actual API structure in your terminal
+        console.log("FULL API RESPONSE:", JSON.stringify(kundali, null, 2));
+
+        if (!kundali || (!kundali.planet_position && !kundali.output)) {
+            return res.json({ success: false, message: "Astrology API failed to return data" });
         }
 
-        const planets = kundali.planet_position;
-console.log("PLANETS DATA:", JSON.stringify(planets, null, 2));
-        // 🌙 Moon + ☀️ Sun
-       const moon = planets.find(p => p.name === "Moon");
-       const sun = planets.find(p => p.name === "Sun");
+        // Handle different API structures (some use .planet_position, some use .output)
+        const planets = kundali.planet_position || kundali.output;
 
-const planetList = planets.map(p => ({
-    name: p.name,
-    sign: p.rasi || "Unknown"
-}));
+        // Search for Sun and Moon (Case Insensitive)
+        const moon = planets.find(p => p.name.toLowerCase() === "moon");
+        const sun = planets.find(p => p.name.toLowerCase() === "sun");
 
-        // 🌟 Nakshatra
+        const planetList = planets.map(p => ({
+            name: p.name,
+            sign: p.rasi || p.sign || "Unknown", // Checks both common names
+            house: p.house || "N/A"
+        }));
+
         const nakshatra = moon?.nakshatra || "Unknown";
-const pada = moon?.pada || "";
+        const pada = moon?.pada || "";
 
-   
-        // 🔮 Prediction
+        // 🔮 AI Interpretation Logic (Past Life)
         let pastLife = "";
-
         if (moon) {
-            pastLife += `Your Moon in ${moon.rasi} and Nakshatra ${nakshatra} shows emotional karmic patterns. `;
+            pastLife += `Your Moon in ${moon.rasi || moon.sign} and Nakshatra ${nakshatra} reveals deep emotional karmic imprints from your previous birth. `;
         }
-
         if (sun) {
-            pastLife += `Your Sun in ${sun.rasi} indicates your soul carried responsibilities in past life. `;
-        }
-
-        if (!pastLife) {
-            pastLife = "Astrological insight could not be generated.";
+            pastLife += `Your Sun position indicates a soul that held great spiritual authority. `;
         }
 
         res.json({
-    success: true,
-    data: {
-        kundali: {
-            moonSign: moon?.rasi || "Unknown",
-            sunSign: sun?.rasi || "Unknown",
-            nakshatra: nakshatra,
-            pada: pada,
-            lagna: "Coming Next Step 🔥",
-            planets: planetList
-        },
-        pastLife,
-        last2Hours: "Recent Moon transit shows slight mental fluctuations.",
-        next2Hours: "LOCKED"
-    }
-});
+            success: true,
+            data: {
+                kundali: {
+                    moonSign: moon?.rasi || moon?.sign || "Unknown",
+                    sunSign: sun?.rasi || sun?.sign || "Unknown",
+                    nakshatra: nakshatra,
+                    pada: pada,
+                    planets: planetList
+                },
+                pastLife: pastLife || "The stars are silent on your past today.",
+                last2Hours: "Recent Moon transit shows mental fluctuations.",
+                next2Hours: "LOCKED"
+            }
+        });
 
     } catch (error) {
-        console.error("ERROR:", error);
-        res.json({
-            success: false,
-            message: "Server error"
-        });
+        console.error("SERVER ERROR:", error);
+        res.json({ success: false, message: "Internal Server Error" });
     }
 });
 
-// ===============================
-// 💰 PAYMENT
-// ===============================
 app.post('/create-order', async (req, res) => {
-    const order = await razorpay.orders.create({
-        amount: 900,
-        currency: "INR"
-    });
-    res.json(order);
+    try {
+        const order = await razorpay.orders.create({
+            amount: 9900, // ₹99.00 (9900 paise)
+            currency: "INR",
+            receipt: "receipt_" + Math.random()
+        });
+        res.json(order);
+    } catch (e) {
+        res.status(500).send(e);
+    }
 });
 
-// ===============================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log("Server running on port " + PORT);
+    console.log("🔮 Jyotish360 Backend running on port " + PORT);
 });
