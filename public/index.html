@@ -1,81 +1,140 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Jyotish360 🔮</title>
-    <style>
-        body {
-            font-family: Arial;
-            background: #0f172a;
-            color: white;
-            text-align: center;
-            padding: 20px;
-        }
-        input, button {
-            padding: 10px;
-            margin: 5px;
-            width: 250px;
-        }
-        .card {
-            background: #1e293b;
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 10px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karma Check</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+.container {
+    max-width: 400px;
+    margin: auto;
+}
+input, button {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: none;
+}
+button {
+    background: #f97316;
+    color: white;
+    font-weight: bold;
+}
+.hidden { display: none; }
+.card {
+    background: #1e293b;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+.lock {
+    filter: blur(5px);
+}
+</style>
 </head>
+
 <body>
 
-<h2>🔮 Jyotish360</h2>
+<div class="container">
 
-<input id="name" placeholder="Name"><br>
-<input id="dob" placeholder="DOB (DD-MM-YYYY)"><br>
-<input id="time" placeholder="Time (HH:MM)"><br>
-<input id="place" placeholder="Place"><br>
+<h2>🔮 Check Your Karma</h2>
 
-<button onclick="generate()">✨ Reveal My Destiny</button>
+<div id="form">
+    <input type="date" id="dob">
+    <input type="time" id="time">
+    <input type="text" id="place" placeholder="Enter Place">
+    <button onclick="generate()">Reveal My Karma</button>
+</div>
 
-<div id="result"></div>
+<div id="loading" class="hidden">
+    <p>🔍 Reading your karma...</p>
+    <p>📊 Analyzing planets...</p>
+</div>
+
+<div id="result" class="hidden">
+
+    <div class="card">
+        <h3 id="shock"></h3>
+        <p>Karma Score: <span id="score"></span>%</p>
+    </div>
+
+    <div class="card">
+        <h4>Life Events</h4>
+        <ul id="life"></ul>
+    </div>
+
+    <div class="card">
+        <h4>Symptoms</h4>
+        <ul id="symptoms"></ul>
+    </div>
+
+    <div class="card">
+        <h4>Last 2 Hours</h4>
+        <ul id="last"></ul>
+    </div>
+
+    <div class="card lock" id="locked">
+        <h4>Next 2 Hours 🔒</h4>
+        <p>Hidden insights...</p>
+    </div>
+
+    <button onclick="unlock()">🔓 Unlock ₹19</button>
+
+</div>
+
+</div>
 
 <script>
+const API = "https://jyotish360.onrender.com";
+
 async function generate() {
-    const res = await fetch('/generate', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            name: document.getElementById('name').value,
-            dob: document.getElementById('dob').value,
-            time: document.getElementById('time').value,
-            place: document.getElementById('place').value
-        })
+
+    document.getElementById("form").classList.add("hidden");
+    document.getElementById("loading").classList.remove("hidden");
+
+    const dob = document.getElementById("dob").value;
+    const time = document.getElementById("time").value;
+    const place = document.getElementById("place").value;
+
+    const res = await fetch(API + "/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dob, time, place })
     });
 
     const data = await res.json();
 
-    if (!data.success) {
-        document.getElementById('result').innerHTML = data.message;
-        return;
-    }
+    document.getElementById("loading").classList.add("hidden");
+    document.getElementById("result").classList.remove("hidden");
 
-    const k = data.data.kundali;
+    document.getElementById("shock").innerText = data.data.shockLine;
+    document.getElementById("score").innerText = data.data.karmaScore;
 
-    document.getElementById('result').innerHTML = `
-    <div class="card">
-        <h3>📊 Kundali</h3>
-        Moon: ${k.moonSign}<br>
-        Sun: ${k.sunSign}<br>
-        Nakshatra: ${k.nakshatra} (Pada ${k.pada})<br>
-    </div>
+    data.data.lifeEvents.forEach(e => {
+        document.getElementById("life").innerHTML += `<li>${e}</li>`;
+    });
 
-    <div class="card">
-        <h3>🪐 Planets</h3>
-        ${k.planets.map(p => `${p.name} → ${p.sign}`).join('<br>')}
-    </div>
+    data.data.symptoms.forEach(e => {
+        document.getElementById("symptoms").innerHTML += `<li>${e}</li>`;
+    });
 
-    <div class="card">
-        <h3>🔮 Insight</h3>
-        ${data.data.pastLife}
-    </div>
-    `;
+    data.data.last2Hours.forEach(e => {
+        document.getElementById("last").innerHTML += `<li>${e}</li>`;
+    });
+
+}
+
+function unlock() {
+    alert("Integrate Razorpay here 💰");
 }
 </script>
 
