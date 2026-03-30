@@ -12,10 +12,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ SERVE FRONTEND (VERY IMPORTANT)
+// ✅ SERVE FRONTEND
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ RAZORPAY SETUP
+// ✅ RAZORPAY
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -26,20 +26,12 @@ app.post('/generate', async (req, res) => {
     try {
         let { dob, time, place } = req.body;
 
-        // DATE FIXER: Converts DD-MM-YYYY → YYYY-MM-DD
+        // DATE FIX
         if (dob.includes('-') && dob.split('-')[0].length === 2) {
             const [d, m, y] = dob.split('-');
             dob = `${y}-${m}-${d}`;
-            const kundliDiv = document.getElementById("kundli");
-document.getElementById("dominant").innerText = data.data.kundali.planets[0].name;
-data.data.kundali.planets.forEach(p => {
-    kundliDiv.innerHTML += `
-        <p>${p.name} → ${p.sign}</p>
-    `;
-});
         }
 
-        // Default coordinates (Tohana)
         const lat = 29.71;
         const lon = 75.83;
 
@@ -54,9 +46,11 @@ data.data.kundali.planets.forEach(p => {
 
         const planets = kundali.planet_position;
 
-        // ✅ FIXED: pass dob + use correct variable
+        // 🔥 MAIN LOGIC
         const karma = await interpretKarmicSymptoms(planets, dob);
+
         console.log("🔥 KARMA DATA:", karma);
+
         const moon = planets.find(
             p => p.name.toLowerCase() === "moon"
         );
@@ -71,12 +65,12 @@ data.data.kundali.planets.forEach(p => {
                         sign: p.rasi?.name
                     }))
                 },
-                karmaScore: karma.karmaScore,
-                shockLine: karma.shockLine,
-                lifeEvents: karma.lifeEvents,
-                symptoms: karma.symptoms,
-                last2Hours: karma.last2Hours,
-                remedies: karma.remedies,
+                karmaScore: karma?.karmaScore || 0,
+                shockLine: karma?.shockLine || "",
+                lifeEvents: karma?.lifeEvents || [],
+                symptoms: karma?.symptoms || [],
+                last2Hours: karma?.last2Hours || [],
+                remedies: karma?.remedies || [],
                 next2Hours: "LOCKED"
             }
         });
@@ -94,7 +88,7 @@ data.data.kundali.planets.forEach(p => {
 app.post('/create-order', async (req, res) => {
     try {
         const order = await razorpay.orders.create({
-            amount: 9900, // ₹99
+            amount: 1900, // ₹19 (better for conversion)
             currency: "INR"
         });
 
@@ -105,7 +99,7 @@ app.post('/create-order', async (req, res) => {
     }
 });
 
-// 🚀 START SERVER
+// 🚀 SERVER
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log("🚀 Server running on " + PORT);
