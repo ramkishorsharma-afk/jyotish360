@@ -31,7 +31,7 @@ app.post('/generate', async (req, res) => {
             const [d, m, y] = dob.split('-');
             dob = `${y}-${m}-${d}`;
             const kundliDiv = document.getElementById("kundli");
-
+document.getElementById("dominant").innerText = data.data.kundali.planets[0].name;
 data.data.kundali.planets.forEach(p => {
     kundliDiv.innerHTML += `
         <p>${p.name} → ${p.sign}</p>
