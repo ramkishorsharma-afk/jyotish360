@@ -59,13 +59,17 @@ button {
     <p>🔍 Reading your karma...</p>
     <p>📊 Analyzing planets...</p>
 </div>
-<div class="card">
-    <p><b>Dominant Planet:</b> <span id="dominant"></span></p>
-    <h4>🪐 Your Kundli</h4>
-    <div id="kundli"></div>
-</div>
+
 <div id="result" class="hidden">
 
+    <!-- Kundli -->
+    <div class="card">
+        <p><b>Dominant Planet:</b> <span id="dominant"></span></p>
+        <h4>🪐 Your Kundli</h4>
+        <div id="kundli"></div>
+    </div>
+
+    <!-- Main -->
     <div class="card">
         <h3 id="shock"></h3>
         <p>Karma Score: <span id="score"></span>%</p>
@@ -86,7 +90,7 @@ button {
         <ul id="last"></ul>
     </div>
 
-    <div class="card lock" id="locked">
+    <div class="card lock">
         <h4>Next 2 Hours 🔒</h4>
         <p>Hidden insights...</p>
     </div>
@@ -98,8 +102,6 @@ button {
 </div>
 
 <script>
-const API = "https://jyotish360.onrender.com";
-
 async function generate() {
 
     document.getElementById("form").classList.add("hidden");
@@ -109,36 +111,67 @@ async function generate() {
     const time = document.getElementById("time").value;
     const place = document.getElementById("place").value;
 
-    const res = await fetch(API + "/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dob, time, place })
-    });
+    try {
+        const res = await fetch("/generate", {   // ✅ FIXED
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dob, time, place })
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    document.getElementById("loading").classList.add("hidden");
-    document.getElementById("result").classList.remove("hidden");
+        document.getElementById("loading").classList.add("hidden");
+        document.getElementById("result").classList.remove("hidden");
 
-    document.getElementById("shock").innerText = data.data.shockLine;
-    document.getElementById("score").innerText = data.data.karmaScore;
+        // ❌ ERROR CHECK
+        if (!data.success) {
+            alert(data.message);
+            return;
+        }
 
-    data.data.lifeEvents.forEach(e => {
-        document.getElementById("life").innerHTML += `<li>${e}</li>`;
-    });
+        const d = data.data;
 
-    data.data.symptoms.forEach(e => {
-        document.getElementById("symptoms").innerHTML += `<li>${e}</li>`;
-    });
+        // ✅ CLEAR OLD DATA
+        document.getElementById("life").innerHTML = "";
+        document.getElementById("symptoms").innerHTML = "";
+        document.getElementById("last").innerHTML = "";
+        document.getElementById("kundli").innerHTML = "";
 
-    data.data.last2Hours.forEach(e => {
-        document.getElementById("last").innerHTML += `<li>${e}</li>`;
-    });
+        // ✅ MAIN DATA
+        document.getElementById("shock").innerText = d.shockLine || "";
+        document.getElementById("score").innerText = d.karmaScore || "0";
 
+        // ✅ LISTS
+        d.lifeEvents.forEach(e => {
+            document.getElementById("life").innerHTML += `<li>${e}</li>`;
+        });
+
+        d.symptoms.forEach(e => {
+            document.getElementById("symptoms").innerHTML += `<li>${e}</li>`;
+        });
+
+        d.last2Hours.forEach(e => {
+            document.getElementById("last").innerHTML += `<li>${e}</li>`;
+        });
+
+        // 🔥 KUNDLI (IMPORTANT)
+        d.kundali.planets.forEach(p => {
+            document.getElementById("kundli").innerHTML += 
+                `<p>${p.name} → ${p.sign}</p>`;
+        });
+
+        // 🔥 DOMINANT PLANET
+        document.getElementById("dominant").innerText =
+            d.kundali.planets[0]?.name || "Unknown";
+
+    } catch (err) {
+        alert("Something went wrong");
+        console.error(err);
+    }
 }
 
 function unlock() {
-    alert("Integrate Razorpay here 💰");
+    alert("Next step: Razorpay integration 💰");
 }
 </script>
 
