@@ -1,42 +1,21 @@
-app.post('/generate', async (req, res) => {
-    try {
-        const { dob, time, place } = req.body;
-        
-        // Use fixed lat/lon for now or integrate a Geo-coding API
-        const lat = 28.61; 
-        const lon = 77.20;
+// 1. Import at the top
+const { interpretKarmicReading } = require('./interpreter');
 
-        const kundali = await getKundali(dob, time, lat, lon);
+// 2. Inside your app.post('/generate')
+const kundali = await getKundali(dob, time, lat, lon);
 
-        // FIX: Check if data exists correctly
-        if (!kundali || !kundali.planet_position) {
-            return res.json({
-                success: false,
-                message: "Astrology API failed to return data"
-            });
+if (kundali && kundali.planet_position) {
+    // Generate the reading using the new logic
+    const pastLifeText = interpretKarmicReading(kundali.planet_position);
+
+    res.json({
+        success: true,
+        data: {
+            kundali: {
+                moonSign: kundali.planet_position.find(p => p.name.toLowerCase() === "moon")?.rasi.name || "Unknown",
+                planets: kundali.planet_position.map(p => ({ name: p.name, sign: p.rasi.name }))
+            },
+            pastLife: pastLifeText // This is the final mystical sentence
         }
-
-        const planets = kundali.planet_position;
-        const moon = planets.find(p => p.name.toLowerCase() === "moon");
-
-        // Simple logic for Past Life since we aren't using AI
-        let pastLife = "Your chart suggests a soul with deep ancient wisdom.";
-        if (moon) {
-            pastLife = `Your Moon in ${moon.rasi.name} suggests your past life was focused on ${moon.rasi.name === 'Cancer' ? 'family and home' : 'discovery and growth'}.`;
-        }
-
-        res.json({
-            success: true,
-            data: {
-                kundali: {
-                    moonSign: moon?.rasi.name || "Unknown",
-                    planets: planets.map(p => ({ name: p.name, sign: p.rasi.name }))
-                },
-                pastLife: pastLife
-            }
-        });
-
-    } catch (error) {
-        res.json({ success: false, message: "Server error" });
-    }
-});
+    });
+}
