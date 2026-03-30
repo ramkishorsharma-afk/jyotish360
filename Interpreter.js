@@ -1,49 +1,71 @@
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+require('dotenv').config();
+
+// Initialize Gemini (Ensure GEMINI_API_KEY is in your Render Env Vars)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 /**
- * Jyotish360 - interpreter.js
- * Optimized for Prokerala API Planet Data
+ * HYBRID INTERPRETER
+ * Attempts AI interpretation, falls back to Local Logic on failure.
  */
-
-function interpretKarmicReading(planets) {
+async function interpretKarmicSymptoms(planets) {
     try {
-        // Ensure planets is an array before processing
-        if (!Array.isArray(planets)) {
-            return "Your karmic map is currently being recalculated by the stars.";
-        }
-
-        // Find key planets using Prokerala's naming convention
+        // 1. Prepare data for the AI
         const moon = planets.find(p => p.name.toLowerCase() === "moon");
         const sun = planets.find(p => p.name.toLowerCase() === "sun");
-        const saturn = planets.find(p => p.name.toLowerCase() === "saturn");
         const ketu = planets.find(p => p.name.toLowerCase() === "ketu");
 
-        let reading = "";
+        const context = {
+            moonSign: moon?.rasi?.name || "Unknown",
+            sunSign: sun?.rasi?.name || "Unknown",
+            ketuSign: ketu?.rasi?.name || "Unknown"
+        };
 
-        // 🌙 Moon Interpretation (Emotional Karma)
-        if (moon && moon.rasi) {
-            reading += `With your Moon in ${moon.rasi.name}, your previous incarnation was defined by deep emotional lessons and family ties. `;
-        }
+        // 2. Try the AI Path (The "Pro" Experience)
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: 'v1' });
+        
+        const prompt = `
+            You are a Vedic Astrologer. 
+            Data: Moon in ${context.moonSign}, Sun in ${context.sunSign}, Ketu in ${context.ketuSign}.
+            Task: Write a 1-sentence mystical past-life root cause for their current karma.
+            Style: Ancient, wise, and slightly mysterious.
+        `;
 
-        // ☀️ Sun Interpretation (Soul Purpose)
-        if (sun && sun.rasi) {
-            reading += `Your Sun in ${sun.rasi.name} indicates you held a position of spiritual or social authority. `;
-        }
-
-        // 🪐 Saturn/Ketu (Past Life Debt)
-        if (saturn && ketu) {
-            reading += `The alignment of Saturn and Ketu suggests you are here to resolve specific ancestral patterns in this lifetime. `;
-        }
-
-        // Fallback if data is missing
-        if (!reading) {
-            reading = "Your chart reflects a soul that has recently entered a fresh cycle of karmic growth and discovery.";
-        }
-
-        return reading;
+        const result = await model.generateContent(prompt);
+        return result.response.text();
 
     } catch (error) {
-        console.error("Interpreter Logic Error:", error);
-        return "The Oracle is currently silent. Please check your birth details.";
+        console.log("AI Path failed, switching to Local Logic...");
+        
+        // 3. Fallback Path (The "Reliable" Experience)
+        return generateLocalReading(planets);
     }
 }
 
-module.exports = { interpretKarmicReading };
+/**
+ * LOCAL LOGIC ENGINE
+ * Pre-written mystical strings based on Zodiac Signs
+ */
+function generateLocalReading(planets) {
+    const moon = planets.find(p => p.name.toLowerCase() === "moon");
+    const sign = moon?.rasi?.name || "Aries";
+
+    const readings = {
+        "Aries": "Your soul was a pioneer or a warrior in a past life, learning the balance between courage and patience.",
+        "Taurus": "You come from a lineage of builders and creators; your karma is tied to the value of inner peace over earthly wealth.",
+        "Gemini": "A past life as a messenger or scholar has left you with an insatiable thirst for truth in this incarnation.",
+        "Cancer": "You were a guardian of the home and hearth; your heart still carries the echoes of ancient family bonds.",
+        "Leo": "The sun in your past shone on leadership; you are now learning the grace of humble service.",
+        "Virgo": "A life of healing and meticulous service has gifted you with the power to fix what is broken.",
+        "Libra": "You were a diplomat or an artist seeking harmony; your current path is to find balance within yourself.",
+        "Scorpio": "You have walked through the fires of transformation before; your soul carries deep occult secrets.",
+        "Sagittarius": "As a philosopher or traveler in a previous life, your spirit remains restless for divine wisdom.",
+        "Capricorn": "You climbed mountains of responsibility in the past; now you learn that the view from the top is for the soul, not just the ego.",
+        "Aquarius": "A visionary who lived ahead of their time; you are here to anchor those revolutionary ideas into reality.",
+        "Pisces": "Your soul was a mystic or a dreamer in the deep oceans of the past; you are finishing a grand karmic cycle."
+    };
+
+    return readings[sign] || "Your chart reflects a soul that has recently entered a fresh cycle of karmic growth.";
+}
+
+module.exports = { interpretKarmicSymptoms };
