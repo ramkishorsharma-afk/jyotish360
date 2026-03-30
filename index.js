@@ -42,16 +42,21 @@ app.post('/generate', async (req, res) => {
         const moon = planets.find(p => p.name.toLowerCase() === "moon");
 
         res.json({
-            success: true,
-            data: {
-                kundali: {
-                    moonSign: moon?.rasi?.name || "Unknown",
-                    planets: planets.map(p => ({ name: p.name, sign: p.rasi?.name }))
-                },
-                pastLife: pastLife,
-                next2Hours: "LOCKED"
-            }
-        });
+    success: true,
+    data: {
+        kundali: {
+            moonSign: moon?.rasi?.name || "Unknown",
+            planets: planets.map(p => ({ name: p.name, sign: p.rasi?.name }))
+        },
+        karmaScore: karma.karmaScore,
+        shockLine: karma.shockLine,
+        lifeEvents: karma.lifeEvents,
+        symptoms: karma.symptoms,
+        last2Hours: karma.last2Hours,
+        remedies: karma.remedies,
+        next2Hours: "LOCKED"
+    }
+});
 
     } catch (error) {
         res.json({ success: false, message: "Server error" });
