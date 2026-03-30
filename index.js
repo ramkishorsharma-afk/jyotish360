@@ -30,6 +30,13 @@ app.post('/generate', async (req, res) => {
         if (dob.includes('-') && dob.split('-')[0].length === 2) {
             const [d, m, y] = dob.split('-');
             dob = `${y}-${m}-${d}`;
+            const kundliDiv = document.getElementById("kundli");
+
+data.data.kundali.planets.forEach(p => {
+    kundliDiv.innerHTML += `
+        <p>${p.name} → ${p.sign}</p>
+    `;
+});
         }
 
         // Default coordinates (Tohana)
