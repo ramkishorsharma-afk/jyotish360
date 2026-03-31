@@ -23,20 +23,34 @@ async function getKundali(dob, time, lat, lon) {
         };
 
         const response = await axios.post(
-            'https://json.astrologyapi.com/v1/planets',
+            'https://json.astrologyapi.com/v1/planets/extended',
             payload,
             { auth }
         );
 
+        console.log("🔍 RAW API:", response.data); // DEBUG
+
+        // ✅ FIX HERE
+        const planetsArray = response.data?.planets || response.data;
+
+        if (!Array.isArray(planetsArray)) {
+            throw new Error("Invalid API response format");
+        }
+
+        const planets = planetsArray.map(p => ({
+            name: p.name,
+            rasi: { name: p.sign }
+        }));
+
         return {
-            planet_position: response.data.map(p => ({
-                name: p.name,
-                rasi: { name: p.sign }
-            }))
+            planet_position: planets
         };
 
     } catch (error) {
-        console.error("ASTRO ERROR:", error.response?.data || error.message);
+        console.error("❌ ASTRO ERROR:");
+        console.error("Status:", error.response?.status);
+        console.error("Data:", error.response?.data);
+        console.error("Message:", error.message);
         return null;
     }
 }
