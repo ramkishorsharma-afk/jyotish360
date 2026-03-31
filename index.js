@@ -2,7 +2,6 @@ const path = require('path');
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const Razorpay = require('razorpay');
 
 const { getKundali } = require('./astro');
 const { interpretKarmicSymptoms } = require('./Interpreter');
@@ -11,22 +10,14 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
-// ✅ SERVE FRONTEND
 app.use(express.static(path.join(__dirname, 'public')));
-
-// ✅ RAZORPAY
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
 
 // 🔮 MAIN API
 app.post('/generate', async (req, res) => {
     try {
         let { dob, time, place } = req.body;
 
-        // DATE FIX
+        // Convert DD-MM-YYYY → YYYY-MM-DD
         if (dob.includes('-') && dob.split('-')[0].length === 2) {
             const [d, m, y] = dob.split('-');
             dob = `${y}-${m}-${d}`;
@@ -35,80 +26,34 @@ app.post('/generate', async (req, res) => {
         const lat = 29.71;
         const lon = 75.83;
 
-       const kundali = {
-    planet_position: [
-        { name: "Sun", rasi: { name: "Leo" } },
-        { name: "Moon", rasi: { name: "Scorpio" } },
-        { name: "Mars", rasi: { name: "Virgo" } },
-        { name: "Rahu", rasi: { name: "Gemini" } },
-        { name: "Saturn", rasi: { name: "Leo" } }
-    ]
-};
+        const kundali = await getKundali(dob, time, lat, lon);
 
-        if (!kundali || !kundali.planet_position) {
-            return res.json({
-                success: false,
-                message: "Astrology API failed"
-            });
+        if (!kundali) {
+            return res.json({ success: false, message: "Astrology API failed" });
         }
 
         const planets = kundali.planet_position;
 
-        // 🔥 MAIN LOGIC
         const karma = await interpretKarmicSymptoms(planets, dob);
-
-        console.log("🔥 KARMA DATA:", karma);
-
-        const moon = planets.find(
-            p => p.name.toLowerCase() === "moon"
-        );
 
         res.json({
             success: true,
             data: {
                 kundali: {
-                    moonSign: moon?.rasi?.name || "Unknown",
-                    planets: planets.map(p => ({
-                        name: p.name,
-                        sign: p.rasi?.name
-                    }))
+                    planets: planets
                 },
-                karmaScore: karma?.karmaScore || 0,
-                shockLine: karma?.shockLine || "",
-                lifeEvents: karma?.lifeEvents || [],
-                symptoms: karma?.symptoms || [],
-                last2Hours: karma?.last2Hours || [],
-                remedies: karma?.remedies || [],
-                next2Hours: "LOCKED"
+                karmaScore: karma.karmaScore,
+                shockLine: karma.shockLine,
+                lifeEvents: karma.lifeEvents,
+                symptoms: karma.symptoms,
+                last2Hours: karma.last2Hours
             }
         });
 
     } catch (error) {
-        console.error("❌ ERROR:", error);
-        res.json({
-            success: false,
-            message: error.message
-        });
+        console.error(error);
+        res.json({ success: false, message: error.message });
     }
 });
 
-// 💰 CREATE ORDER
-app.post('/create-order', async (req, res) => {
-    try {
-        const order = await razorpay.orders.create({
-            amount: 1900, // ₹19 (better for conversion)
-            currency: "INR"
-        });
-
-        res.json(order);
-    } catch (error) {
-        console.error("❌ Payment Error:", error);
-        res.json({ success: false });
-    }
-});
-
-// 🚀 SERVER
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log("🚀 Server running on " + PORT);
-});
+app.listen(3000, () => console.log("🚀 Server running"));
