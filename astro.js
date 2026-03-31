@@ -12,11 +12,11 @@ async function getKundali(dob, time, lat, lon) {
         const [hour, min] = time.split(':');
 
         const payload = {
-            day: parseInt(day),
-            month: parseInt(month),
-            year: parseInt(year),
-            hour: parseInt(hour),
-            min: parseInt(min),
+            day: +day,
+            month: +month,
+            year: +year,
+            hour: +hour,
+            min: +min,
             lat,
             lon,
             tzone: 5.5
@@ -28,18 +28,28 @@ async function getKundali(dob, time, lat, lon) {
             { auth }
         );
 
-        console.log("🔍 RAW API:", response.data); // DEBUG
+        console.log("🔍 FULL RESPONSE:", JSON.stringify(response.data, null, 2));
 
-        // ✅ FIX HERE
-        const planetsArray = response.data?.planets || response.data;
+        // 🔥 HANDLE ALL POSSIBLE STRUCTURES
+        let planetsArray = null;
 
-        if (!Array.isArray(planetsArray)) {
-            throw new Error("Invalid API response format");
+        if (Array.isArray(response.data)) {
+            planetsArray = response.data;
+        } else if (Array.isArray(response.data.planets)) {
+            planetsArray = response.data.planets;
+        } else if (Array.isArray(response.data.output)) {
+            planetsArray = response.data.output;
+        } else if (Array.isArray(response.data.data)) {
+            planetsArray = response.data.data;
+        }
+
+        if (!planetsArray) {
+            throw new Error("No planets array found in API response");
         }
 
         const planets = planetsArray.map(p => ({
-            name: p.name,
-            rasi: { name: p.sign }
+            name: p.name || p.planet,
+            rasi: { name: p.sign || p.rasi }
         }));
 
         return {
