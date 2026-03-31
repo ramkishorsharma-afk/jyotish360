@@ -24,7 +24,9 @@ async function getKundali(dob, time, lat, lon) {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         return { success: true, planet_position: response.data.data.planet_positions };
-    } catch (error) { return null; }
+    } catch (error) {
+    console.error("❌ TOKEN ERROR:", error.response?.data || error.message);
+    return null;
 }
 
 module.exports = { getKundali };
