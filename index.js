@@ -35,7 +35,15 @@ app.post('/generate', async (req, res) => {
         const lat = 29.71;
         const lon = 75.83;
 
-        const kundali = await getKundali(dob, time, lat, lon);
+       const kundali = {
+    planet_position: [
+        { name: "Sun", rasi: { name: "Leo" } },
+        { name: "Moon", rasi: { name: "Scorpio" } },
+        { name: "Mars", rasi: { name: "Virgo" } },
+        { name: "Rahu", rasi: { name: "Gemini" } },
+        { name: "Saturn", rasi: { name: "Leo" } }
+    ]
+};
 
         if (!kundali || !kundali.planet_position) {
             return res.json({
