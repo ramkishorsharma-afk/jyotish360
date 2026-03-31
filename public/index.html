@@ -1,177 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Karma Check</title>
-
+<title>Karma App</title>
 <style>
-body {
-    font-family: Arial;
-    background: #0f172a;
-    color: white;
-    text-align: center;
-    padding: 20px;
-}
-.container {
-    max-width: 400px;
-    margin: auto;
-}
-input, button {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    border-radius: 8px;
-    border: none;
-}
-button {
-    background: #f97316;
-    color: white;
-    font-weight: bold;
-}
-.hidden { display: none; }
-.card {
-    background: #1e293b;
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 10px;
-}
-.lock {
-    filter: blur(5px);
-}
+body { background:#0f172a; color:white; text-align:center; font-family:Arial;}
+.card { background:#1e293b; padding:15px; margin:10px; border-radius:10px;}
+button { padding:10px; background:orange; border:none; }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
 <h2>🔮 Check Your Karma</h2>
 
-<div id="form">
-    <input type="date" id="dob">
-    <input type="time" id="time">
-    <input type="text" id="place" placeholder="Enter Place">
-    <button onclick="generate()">Reveal My Karma</button>
-</div>
+<input type="date" id="dob">
+<input type="time" id="time">
+<input type="text" id="place" placeholder="Place">
+<button onclick="generate()">Check</button>
 
-<div id="loading" class="hidden">
-    <p>🔍 Reading your karma...</p>
-    <p>📊 Analyzing planets...</p>
-</div>
-
-<div id="result" class="hidden">
-
-    <!-- Kundli -->
-    <div class="card">
-        <p><b>Dominant Planet:</b> <span id="dominant"></span></p>
-        <h4>🪐 Your Kundli</h4>
-        <div id="kundli"></div>
-    </div>
-
-    <!-- Main -->
-    <div class="card">
-        <h3 id="shock"></h3>
-        <p>Karma Score: <span id="score"></span>%</p>
-    </div>
-
-    <div class="card">
-        <h4>Life Events</h4>
-        <ul id="life"></ul>
-    </div>
-
-    <div class="card">
-        <h4>Symptoms</h4>
-        <ul id="symptoms"></ul>
-    </div>
-
-    <div class="card">
-        <h4>Last 2 Hours</h4>
-        <ul id="last"></ul>
-    </div>
-
-    <div class="card lock">
-        <h4>Next 2 Hours 🔒</h4>
-        <p>Hidden insights...</p>
-    </div>
-
-    <button onclick="unlock()">🔓 Unlock ₹19</button>
-
-</div>
-
-</div>
+<div id="result"></div>
 
 <script>
 async function generate() {
-
-    document.getElementById("form").classList.add("hidden");
-    document.getElementById("loading").classList.remove("hidden");
 
     const dob = document.getElementById("dob").value;
     const time = document.getElementById("time").value;
     const place = document.getElementById("place").value;
 
-    try {
-        const res = await fetch("/generate", {   // ✅ FIXED
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ dob, time, place })
-        });
+    const res = await fetch("/generate", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ dob, time, place })
+    });
 
-        const data = await res.json();
+    const data = await res.json();
 
-        document.getElementById("loading").classList.add("hidden");
-        document.getElementById("result").classList.remove("hidden");
-
-        // ❌ ERROR CHECK
-        if (!data.success) {
-            alert(data.message);
-            return;
-        }
-
-        const d = data.data;
-
-        // ✅ CLEAR OLD DATA
-        document.getElementById("life").innerHTML = "";
-        document.getElementById("symptoms").innerHTML = "";
-        document.getElementById("last").innerHTML = "";
-        document.getElementById("kundli").innerHTML = "";
-
-        // ✅ MAIN DATA
-        document.getElementById("shock").innerText = d.shockLine || "";
-        document.getElementById("score").innerText = d.karmaScore || "0";
-
-        // ✅ LISTS
-        d.lifeEvents.forEach(e => {
-            document.getElementById("life").innerHTML += `<li>${e}</li>`;
-        });
-
-        d.symptoms.forEach(e => {
-            document.getElementById("symptoms").innerHTML += `<li>${e}</li>`;
-        });
-
-        d.last2Hours.forEach(e => {
-            document.getElementById("last").innerHTML += `<li>${e}</li>`;
-        });
-
-        // 🔥 KUNDLI (IMPORTANT)
-        d.kundali.planets.forEach(p => {
-            document.getElementById("kundli").innerHTML += 
-                `<p>${p.name} → ${p.sign}</p>`;
-        });
-
-        // 🔥 DOMINANT PLANET
-        document.getElementById("dominant").innerText =
-            d.kundali.planets[0]?.name || "Unknown";
-
-    } catch (err) {
-        alert("Something went wrong");
-        console.error(err);
+    if (!data.success) {
+        alert(data.message);
+        return;
     }
-}
 
-function unlock() {
-    alert("Next step: Razorpay integration 💰");
+    const d = data.data;
+
+    let html = `
+    <div class="card">
+        <h3>${d.shockLine}</h3>
+        <p>Karma Score: ${d.karmaScore}</p>
+    </div>
+
+    <div class="card">
+        <h4>Kundli</h4>
+        ${d.kundali.planets.map(p => `<p>${p.name} → ${p.rasi.name}</p>`).join("")}
+    </div>
+
+    <div class="card">
+        <h4>Life Events</h4>
+        ${d.lifeEvents.map(e => `<p>${e}</p>`).join("")}
+    </div>
+
+    <div class="card">
+        <h4>Symptoms</h4>
+        ${d.symptoms.map(e => `<p>${e}</p>`).join("")}
+    </div>
+    `;
+
+    document.getElementById("result").innerHTML = html;
 }
 </script>
 
