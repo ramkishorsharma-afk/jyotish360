@@ -1,64 +1,52 @@
 const axios = require('axios');
-const qs = require('qs');
 require('dotenv').config();
 
-async function getAccessToken() {
-    try {
-        const response = await axios.post(
-            'https://api.prokerala.com/token',
-            qs.stringify({
-                grant_type: 'client_credentials',
-                client_id: process.env.PROKERALA_CLIENT_ID,
-                client_secret: process.env.PROKERALA_CLIENT_SECRET
-            }),
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            }
-        );
+const USER_ID = process.env.ASTROLOGY_API_USER_ID;
+const API_KEY = process.env.ASTROLOGY_API_KEY;
 
-        return response.data.access_token;
+const auth = {
+    username: USER_ID,
+    password: API_KEY
+};
 
-    } catch (error) {
-        console.error("❌ TOKEN ERROR:", error.response?.data || error.message);
-        return null;
-    }
-}
-
+// 🔮 GET PLANET DATA
 async function getKundali(dob, time, lat, lon) {
     try {
-        const token = await getAccessToken();
+        // Convert date format YYYY-MM-DD → DD/MM/YYYY
+        const [year, month, day] = dob.split('-');
 
-        if (!token) throw new Error("Token failed");
+        const [hour, min] = time.split(':');
 
-        if (time.length === 5) {
-            time = `${time}:00`;
-        }
+        const payload = {
+            day: parseInt(day),
+            month: parseInt(month),
+            year: parseInt(year),
+            hour: parseInt(hour),
+            min: parseInt(min),
+            lat: lat,
+            lon: lon,
+            tzone: 5.5
+        };
 
-        const datetime = `${dob}T${time}+05:30`;
-
-        const response = await axios.get(
-            'https://api.prokerala.com/v2/astrology/planet-position',
-            {
-                params: {
-                    datetime,
-                    coordinates: `${lat},${lon}`,
-                    ayanamsa: 1
-                },
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
+        const response = await axios.post(
+            'https://json.astrologyapi.com/v1/planets',
+            payload,
+            { auth }
         );
+
+        // Convert response to your format
+        const planets = response.data.map(p => ({
+            name: p.name,
+            rasi: { name: p.sign }
+        }));
 
         return {
             success: true,
-            planet_position: response.data.data.planet_positions
+            planet_position: planets
         };
 
     } catch (error) {
-        console.error("❌ KUNDALI ERROR:", error.response?.data || error.message);
+        console.error("❌ ASTROLOGY API ERROR:", error.response?.data || error.message);
         return null;
     }
 }
