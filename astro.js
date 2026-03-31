@@ -1,20 +1,14 @@
 const axios = require('axios');
 require('dotenv').config();
 
-const USER_ID = process.env.ASTROLOGY_API_USER_ID;
-const API_KEY = process.env.ASTROLOGY_API_KEY;
-
 const auth = {
-    username: USER_ID,
-    password: API_KEY
+    username: process.env.ASTROLOGY_API_USER_ID,
+    password: process.env.ASTROLOGY_API_KEY
 };
 
-// 🔮 GET PLANET DATA
 async function getKundali(dob, time, lat, lon) {
     try {
-        // Convert date format YYYY-MM-DD → DD/MM/YYYY
         const [year, month, day] = dob.split('-');
-
         const [hour, min] = time.split(':');
 
         const payload = {
@@ -23,8 +17,8 @@ async function getKundali(dob, time, lat, lon) {
             year: parseInt(year),
             hour: parseInt(hour),
             min: parseInt(min),
-            lat: lat,
-            lon: lon,
+            lat,
+            lon,
             tzone: 5.5
         };
 
@@ -34,19 +28,15 @@ async function getKundali(dob, time, lat, lon) {
             { auth }
         );
 
-        // Convert response to your format
-        const planets = response.data.map(p => ({
-            name: p.name,
-            rasi: { name: p.sign }
-        }));
-
         return {
-            success: true,
-            planet_position: planets
+            planet_position: response.data.map(p => ({
+                name: p.name,
+                rasi: { name: p.sign }
+            }))
         };
 
     } catch (error) {
-        console.error("❌ ASTROLOGY API ERROR:", error.response?.data || error.message);
+        console.error("ASTRO ERROR:", error.response?.data || error.message);
         return null;
     }
 }
