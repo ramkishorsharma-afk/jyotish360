@@ -41,14 +41,14 @@ button {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 5px;
-    margin-top: 10px;
 }
 .box {
     border: 1px solid #fff;
     min-height: 70px;
-    font-size: 12px;
     padding: 5px;
+    font-size: 12px;
 }
+
 .lock {
     filter: blur(5px);
 }
@@ -65,7 +65,7 @@ button {
     <input type="date" id="dob">
     <input type="time" id="time">
     <input type="text" id="place" placeholder="Enter Place">
-    <button onclick="generate()">Reveal My Karma</button>
+    <button onclick="generate()">Check</button>
 </div>
 
 <div id="loading" class="hidden">
@@ -74,7 +74,7 @@ button {
 
 <div id="result" class="hidden">
 
-    <!-- Kundli Chart -->
+    <!-- Kundli -->
     <div class="card">
         <h3>🪐 Kundli Chart</h3>
         <div class="chart">
@@ -99,7 +99,7 @@ button {
         <p>Karma Score: <span id="score"></span>%</p>
     </div>
 
-    <!-- Life -->
+    <!-- Life Events -->
     <div class="card">
         <h4>Life Events</h4>
         <ul id="life"></ul>
@@ -110,10 +110,13 @@ button {
         <h4>Symptoms</h4>
         <ul id="symptoms"></ul>
     </div>
-<div class="card">
-    <h4>Remedies</h4>
-    <ul id="remedies"></ul>
-</div>
+
+    <!-- Remedies -->
+    <div class="card">
+        <h4>Remedies</h4>
+        <ul id="remedies"></ul>
+    </div>
+
     <!-- Last 2 Hours -->
     <div class="card">
         <h4>Last 2 Hours</h4>
@@ -123,6 +126,7 @@ button {
     <!-- Locked -->
     <div class="card lock">
         <h4>Next 2 Hours 🔒</h4>
+        <p>Hidden insights...</p>
     </div>
 
     <button onclick="unlock()">🔓 Unlock ₹19</button>
@@ -132,8 +136,6 @@ button {
 </div>
 
 <script>
-
-const API = "";
 
 async function generate() {
 
@@ -155,14 +157,17 @@ async function generate() {
     document.getElementById("loading").classList.add("hidden");
     document.getElementById("result").classList.remove("hidden");
 
+    // Karma
     document.getElementById("shock").innerText = data.data.shockLine;
     document.getElementById("score").innerText = data.data.karmaScore;
 
-    // Clear previous
+    // Clear lists
     document.getElementById("life").innerHTML = "";
     document.getElementById("symptoms").innerHTML = "";
+    document.getElementById("remedies").innerHTML = "";
     document.getElementById("last").innerHTML = "";
 
+    // Fill data
     data.data.lifeEvents.forEach(e => {
         document.getElementById("life").innerHTML += `<li>${e}</li>`;
     });
@@ -171,31 +176,29 @@ async function generate() {
         document.getElementById("symptoms").innerHTML += `<li>${e}</li>`;
     });
 
+    data.data.remedies.forEach(e => {
+        document.getElementById("remedies").innerHTML += `<li>🪔 ${e}</li>`;
+    });
+
     data.data.last2Hours.forEach(e => {
         document.getElementById("last").innerHTML += `<li>${e}</li>`;
     });
 
-    renderChart(data.data.kundali.planets);
-}
-
-// 🪐 Render Chart (REAL HOUSE BASED)
-function renderChart(planets) {
-
+    // Kundli Chart
     for (let i = 1; i <= 12; i++) {
         document.getElementById("h" + i).innerHTML = `<b>H${i}</b><br>`;
     }
 
-    planets.forEach(p => {
+    data.data.kundali.planets.forEach(p => {
         if (!p.house) return;
 
-        document.getElementById("h" + p.house).innerHTML += `
-            <div>${p.name}</div>
-        `;
+        document.getElementById("h" + p.house).innerHTML +=
+            `<div>${p.name}</div>`;
     });
 }
 
 function unlock() {
-    alert("💰 Razorpay integration next step");
+    alert("💰 Payment integration next step");
 }
 
 </script>
