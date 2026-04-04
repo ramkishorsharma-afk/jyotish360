@@ -1,26 +1,6 @@
-const axios = require('axios');
+const axios = require("axios");
 
-const SIGN_ORDER = [
-    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
-];
-
-function getHouse(sign, ascendant) {
-    if (!sign || !ascendant) return null;
-
-    sign = sign.trim();
-    ascendant = ascendant.trim();
-
-    const signIndex = SIGN_ORDER.indexOf(sign);
-    const ascIndex = SIGN_ORDER.indexOf(ascendant);
-
-    if (signIndex === -1 || ascIndex === -1) return null;
-
-    let house = signIndex - ascIndex + 1;
-    if (house <= 0) house += 12;
-
-    return house;
-}
+const API_URL = "https://json.astrologyapi.com/v1/planets";
 
 async function getKundali(dob, time, lat, lon) {
     try {
@@ -28,7 +8,7 @@ async function getKundali(dob, time, lat, lon) {
         const [hour, min] = time.split(":");
 
         const response = await axios.post(
-            "https://json.astrologyapi.com/v1/planets",
+            API_URL,
             {
                 day: parseInt(day),
                 month: parseInt(month),
@@ -42,34 +22,25 @@ async function getKundali(dob, time, lat, lon) {
             {
                 headers: {
                     "Content-Type": "application/json",
-                    "x-astrologyapi-key": process.env.ASTROLOGY_API_KEY
+                    "x-astrologyapi-key": process.env.ASTROLOGY_API_TOKEN
                 }
             }
         );
 
-        const data = response.data;
+        console.log("✅ ASTRO SUCCESS:", response.data);
 
-        if (!Array.isArray(data)) return null;
-
-        // ✅ Find Ascendant
-        const asc = data.find(p => p.name === "Ascendant");
-        const ascSign = asc?.sign;
-
-        if (!ascSign) return null;
-
-        // ✅ Map planets with house
-        const planets = data.map(p => ({
-            name: p.name,
-            sign: p.sign,
-            house: getHouse(p.sign, ascSign)
-        }));
-
-        return {
-            planet_position: planets
-        };
+        return response.data;
 
     } catch (error) {
-        console.log("ASTRO ERROR:", error.response?.data || error.message);
+        console.error("❌ ASTRO ERROR:");
+
+        if (error.response) {
+            console.error("Status:", error.response.status);
+            console.error("Data:", error.response.data);
+        } else {
+            console.error(error.message);
+        }
+
         return null;
     }
 }
