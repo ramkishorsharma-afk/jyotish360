@@ -6,7 +6,6 @@ const auth = {
     password: process.env.ASTROLOGY_API_KEY
 };
 
-// ✅ MUST BE async
 async function getKundali(dob, time, lat, lon) {
     try {
         const [year, month, day] = dob.split('-');
@@ -23,14 +22,11 @@ async function getKundali(dob, time, lat, lon) {
             tzone: 5.5
         };
 
-        // ✅ await INSIDE async function
         const response = await axios.post(
             'https://json.astrologyapi.com/v1/planets/extended',
             payload,
             { auth }
         );
-
-        console.log("RAW:", response.data);
 
         let planetsArray = [];
 
@@ -42,18 +38,14 @@ async function getKundali(dob, time, lat, lon) {
             planetsArray = response.data.planets;
         }
 
-        if (!Array.isArray(planetsArray)) {
-            return null;
-        }
+        if (!Array.isArray(planetsArray)) return null;
 
         const planets = planetsArray.map(p => ({
             name: p.name || p.planet,
             rasi: { name: p.sign || p.rasi }
         }));
 
-        return {
-            planet_position: planets
-        };
+        return { planet_position: planets };
 
     } catch (error) {
         console.error("ASTRO ERROR:", error.response?.data || error.message);
