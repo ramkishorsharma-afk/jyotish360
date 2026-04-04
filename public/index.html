@@ -1,27 +1,141 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Karma App</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Karma Check</title>
+
 <style>
-body { background:#0f172a; color:white; text-align:center; font-family:Arial;}
-.card { background:#1e293b; padding:15px; margin:10px; border-radius:10px;}
-button { padding:10px; background:orange; border:none; }
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+.container {
+    max-width: 500px;
+    margin: auto;
+}
+input, button {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: none;
+}
+button {
+    background: #f97316;
+    color: white;
+    font-weight: bold;
+}
+.card {
+    background: #1e293b;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 10px;
+}
+.hidden { display: none; }
+
+.chart {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin-top: 10px;
+}
+.box {
+    border: 1px solid #fff;
+    min-height: 70px;
+    font-size: 12px;
+    padding: 5px;
+}
+.lock {
+    filter: blur(5px);
+}
 </style>
 </head>
 
 <body>
 
+<div class="container">
+
 <h2>🔮 Check Your Karma</h2>
 
-<input type="date" id="dob">
-<input type="time" id="time">
-<input type="text" id="place" placeholder="Place">
-<button onclick="generate()">Check</button>
+<div id="form">
+    <input type="date" id="dob">
+    <input type="time" id="time">
+    <input type="text" id="place" placeholder="Enter Place">
+    <button onclick="generate()">Reveal My Karma</button>
+</div>
 
-<div id="result"></div>
+<div id="loading" class="hidden">
+    <p>🔍 Reading your karma...</p>
+</div>
+
+<div id="result" class="hidden">
+
+    <!-- Kundli Chart -->
+    <div class="card">
+        <h3>🪐 Kundli Chart</h3>
+        <div class="chart">
+            <div class="box" id="h1"></div>
+            <div class="box" id="h2"></div>
+            <div class="box" id="h3"></div>
+            <div class="box" id="h4"></div>
+            <div class="box" id="h5"></div>
+            <div class="box" id="h6"></div>
+            <div class="box" id="h7"></div>
+            <div class="box" id="h8"></div>
+            <div class="box" id="h9"></div>
+            <div class="box" id="h10"></div>
+            <div class="box" id="h11"></div>
+            <div class="box" id="h12"></div>
+        </div>
+    </div>
+
+    <!-- Karma -->
+    <div class="card">
+        <h3 id="shock"></h3>
+        <p>Karma Score: <span id="score"></span>%</p>
+    </div>
+
+    <!-- Life -->
+    <div class="card">
+        <h4>Life Events</h4>
+        <ul id="life"></ul>
+    </div>
+
+    <!-- Symptoms -->
+    <div class="card">
+        <h4>Symptoms</h4>
+        <ul id="symptoms"></ul>
+    </div>
+
+    <!-- Last 2 Hours -->
+    <div class="card">
+        <h4>Last 2 Hours</h4>
+        <ul id="last"></ul>
+    </div>
+
+    <!-- Locked -->
+    <div class="card lock">
+        <h4>Next 2 Hours 🔒</h4>
+    </div>
+
+    <button onclick="unlock()">🔓 Unlock ₹19</button>
+
+</div>
+
+</div>
 
 <script>
+
+const API = "";
+
 async function generate() {
+
+    document.getElementById("form").classList.add("hidden");
+    document.getElementById("loading").classList.remove("hidden");
 
     const dob = document.getElementById("dob").value;
     const time = document.getElementById("time").value;
@@ -29,43 +143,58 @@ async function generate() {
 
     const res = await fetch("/generate", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dob, time, place })
     });
 
     const data = await res.json();
 
-    if (!data.success) {
-        alert(data.message);
-        return;
+    document.getElementById("loading").classList.add("hidden");
+    document.getElementById("result").classList.remove("hidden");
+
+    document.getElementById("shock").innerText = data.data.shockLine;
+    document.getElementById("score").innerText = data.data.karmaScore;
+
+    // Clear previous
+    document.getElementById("life").innerHTML = "";
+    document.getElementById("symptoms").innerHTML = "";
+    document.getElementById("last").innerHTML = "";
+
+    data.data.lifeEvents.forEach(e => {
+        document.getElementById("life").innerHTML += `<li>${e}</li>`;
+    });
+
+    data.data.symptoms.forEach(e => {
+        document.getElementById("symptoms").innerHTML += `<li>${e}</li>`;
+    });
+
+    data.data.last2Hours.forEach(e => {
+        document.getElementById("last").innerHTML += `<li>${e}</li>`;
+    });
+
+    renderChart(data.data.kundali.planets);
+}
+
+// 🪐 Render Chart (REAL HOUSE BASED)
+function renderChart(planets) {
+
+    for (let i = 1; i <= 12; i++) {
+        document.getElementById("h" + i).innerHTML = `<b>H${i}</b><br>`;
     }
 
-    const d = data.data;
+    planets.forEach(p => {
+        if (!p.house) return;
 
-    let html = `
-    <div class="card">
-        <h3>${d.shockLine}</h3>
-        <p>Karma Score: ${d.karmaScore}</p>
-    </div>
-
-    <div class="card">
-        <h4>Kundli</h4>
-        ${d.kundali.planets.map(p => `<p>${p.name} → ${p.rasi.name}</p>`).join("")}
-    </div>
-
-    <div class="card">
-        <h4>Life Events</h4>
-        ${d.lifeEvents.map(e => `<p>${e}</p>`).join("")}
-    </div>
-
-    <div class="card">
-        <h4>Symptoms</h4>
-        ${d.symptoms.map(e => `<p>${e}</p>`).join("")}
-    </div>
-    `;
-
-    document.getElementById("result").innerHTML = html;
+        document.getElementById("h" + p.house).innerHTML += `
+            <div>${p.name}</div>
+        `;
+    });
 }
+
+function unlock() {
+    alert("💰 Razorpay integration next step");
+}
+
 </script>
 
 </body>
