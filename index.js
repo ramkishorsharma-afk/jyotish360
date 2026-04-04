@@ -26,20 +26,17 @@ app.post('/generate', async (req, res) => {
     try {
         let { dob, time, place } = req.body;
 
-        // Convert DD-MM-YYYY → YYYY-MM-DD
         if (dob.includes('-') && dob.split('-')[0].length === 2) {
             const [d, m, y] = dob.split('-');
             dob = `${y}-${m}-${d}`;
         }
 
-        // Default coordinates (Tohana)
         const lat = 29.71;
         const lon = 75.83;
 
         const kundali = await getKundali(dob, time, lat, lon);
 
         if (!kundali || !kundali.planet_position) {
-            console.log("PLANETS:", planets);
             return res.json({
                 success: false,
                 message: "Astrology API failed"
@@ -48,16 +45,12 @@ app.post('/generate', async (req, res) => {
 
         const planets = kundali.planet_position;
 
-        // ✅ Karma logic
         const karma = interpretKarmicSymptoms(planets, dob);
-
-        const moon = planets.find(p => p.name.toLowerCase() === "moon");
 
         res.json({
             success: true,
             data: {
                 kundali: {
-                    moonSign: moon?.sign || "Unknown",
                     planets: planets
                 },
                 karmaScore: karma.karmaScore,
@@ -71,7 +64,6 @@ app.post('/generate', async (req, res) => {
         });
 
     } catch (error) {
-        console.error("❌ ERROR:", error);
         res.json({
             success: false,
             message: error.message
@@ -79,22 +71,14 @@ app.post('/generate', async (req, res) => {
     }
 });
 
-// 💰 Payment API
+// 💰 Payment
 app.post('/create-order', async (req, res) => {
-    try {
-        const order = await razorpay.orders.create({
-            amount: 1900, // ₹19
-            currency: "INR"
-        });
-        res.json(order);
-    } catch (error) {
-        console.error("Payment Error:", error);
-        res.json({ success: false });
-    }
+    const order = await razorpay.orders.create({
+        amount: 1900,
+        currency: "INR"
+    });
+    res.json(order);
 });
 
-// 🚀 Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log("🚀 Server running on " + PORT);
-});
+app.listen(PORT, () => console.log("Server running on " + PORT));
