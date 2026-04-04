@@ -1,44 +1,71 @@
 const axios = require('axios');
-require('dotenv').config();
+
+const SIGN_ORDER = [
+    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+];
+
+function getHouse(sign, ascendant) {
+    const signIndex = SIGN_ORDER.indexOf(sign);
+    const ascIndex = SIGN_ORDER.indexOf(ascendant);
+
+    if (signIndex === -1 || ascIndex === -1) return null;
+
+    let house = signIndex - ascIndex + 1;
+    if (house <= 0) house += 12;
+
+    return house;
+}
 
 async function getKundali(dob, time, lat, lon) {
     try {
-        const [year, month, day] = dob.split('-');
-        const [hour, min] = time.split(':');
-
-        const payload = {
-            day: +day,
-            month: +month,
-            year: +year,
-            hour: +hour,
-            min: +min,
-            lat,
-            lon,
-            tzone: 5.5
-        };
+        const [year, month, day] = dob.split("-");
+        const [hour, min] = time.split(":");
 
         const response = await axios.post(
-            'https://json.astrologyapi.com/v1/planets/extended',
-            payload,
+            "https://json.astrologyapi.com/v1/planets",
+            {
+                day: parseInt(day),
+                month: parseInt(month),
+                year: parseInt(year),
+                hour: parseInt(hour),
+                min: parseInt(min),
+                lat: lat,
+                lon: lon,
+                tzone: 5.5
+            },
             {
                 headers: {
-                    'Content-Type': 'application/json',
-                    'x-astrologyapi-key': process.env.ASTROLOGY_ACCESS_TOKEN
+                    "Content-Type": "application/json",
+                    "x-astrologyapi-key": process.env.ASTROLOGY_API_KEY
                 }
             }
         );
 
-        console.log("✅ API SUCCESS:", response.data);
+        const data = response.data;
 
-        const planets = response.data.map(p => ({
+        if (!Array.isArray(data)) {
+            console.log("❌ API RESPONSE:", data);
+            return null;
+        }
+
+        // find ascendant
+        const asc = data.find(p => p.name === "Ascendant");
+        const ascSign = asc?.sign;
+
+        const planets = data.map(p => ({
             name: p.name,
-            rasi: { name: p.sign }
+            sign: p.sign,
+            house: getHouse(p.sign, ascSign)
         }));
 
-        return { planet_position: planets };
+        return {
+            planet_position: planets
+        };
 
     } catch (error) {
-        console.error("❌ ERROR:", error.response?.data || error.message);
+        console.log("❌ ASTRO ERROR:");
+        console.log(error.response?.data || error.message);
         return null;
     }
 }
