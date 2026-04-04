@@ -28,7 +28,7 @@ async function getKundali(dob, time, lat, lon) {
             }
         );
 
-        console.log("✅ API WORKING");
+        console.log("✅ API SUCCESS:", response.data);
 
         const planets = response.data.map(p => ({
             name: p.name,
