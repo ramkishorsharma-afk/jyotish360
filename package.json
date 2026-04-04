@@ -1,12 +1,9 @@
 {
   "name": "jyotish360",
-  "version": "1.1.0",
-  "description": "AI-Powered Astrology App with Swiss Ephemeris",
+  "version": "1.0.0",
   "main": "index.js",
-  "type": "commonjs",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "@swisseph/node": "^3.0.1",
@@ -15,8 +12,5 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "razorpay": "^2.9.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.2"
   }
 }
