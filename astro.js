@@ -4,10 +4,12 @@ require('dotenv').config();
 const USER_ID = process.env.ASTROLOGY_API_USER_ID;
 const API_KEY = process.env.ASTROLOGY_API_KEY;
 
-function getAuthHeader() {
-  const token = Buffer.from(`${USER_ID}:${API_KEY}`).toString('base64');
-  return { Authorization: `Basic ${token}` };
-}
+const response = await axios.post(
+  'https://json.astrologyapi.com/v1/planets/extended',
+  payload,
+  { headers: { ...getAuthHeader(), 'Content-Type':'application/json' } }
+);
+
 
 // 🌌 Kundali (planet positions)
 async function getKundali(dob, time, lat, lon) {
