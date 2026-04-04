@@ -1,148 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Karma Check</title>
-
 <style>
-body {
-    font-family: Arial;
-    background: #0f172a;
-    color: white;
-    text-align: center;
-    padding: 20px;
-}
-.container {
-    max-width: 500px;
-    margin: auto;
-}
-input, button {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    border-radius: 8px;
-    border: none;
-}
-button {
-    background: #f97316;
-    color: white;
-    font-weight: bold;
-}
-.card {
-    background: #1e293b;
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 10px;
-}
-.hidden { display: none; }
-
-.chart {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 5px;
-}
-.box {
-    border: 1px solid #fff;
-    min-height: 70px;
-    padding: 5px;
-    font-size: 12px;
-}
-
-.lock {
-    filter: blur(5px);
-}
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* Universe Background */
+        background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), 
+                    url('https://images.unsplash.com/photo-1464802686167-b939a6910659?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
+        background-size: cover;
+        background-attachment: fixed;
+        background-position: center;
+        color: white;
+        text-align: center;
+        padding: 20px;
+        margin: 0;
+    }
+    .container {
+        max-width: 500px;
+        margin: auto;
+    }
+    /* Glassmorphism Effect for Cards */
+    .card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(10px);
+        padding: 15px;
+        border-radius: 15px;
+        margin-top: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    }
+    input, button {
+        width: 100%;
+        padding: 14px;
+        margin: 10px 0;
+        border-radius: 10px;
+        border: none;
+        box-sizing: border-box;
+    }
+    button {
+        background: linear-gradient(45deg, #f97316, #ea580c);
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    button:hover {
+        transform: scale(1.02);
+    }
+    .chart {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 3x4 grid for better mobile view */
+        gap: 8px;
+    }
+    .box {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(0, 0, 0, 0.3);
+        min-height: 80px;
+        padding: 5px;
+        font-size: 11px;
+        border-radius: 5px;
+    }
+    .box b { color: #f97316; display: block; margin-bottom: 3px; }
+    .hidden { display: none; }
+    .lock { filter: blur(8px); opacity: 0.5; pointer-events: none; }
+    ul { text-align: left; padding-left: 20px; list-style-type: '✨ '; }
 </style>
-</head>
 
-<body>
-
-<div class="container">
-
-<h2>🔮 Check Your Karma</h2>
-
-<div id="form">
-    <input type="date" id="dob">
-    <input type="time" id="time">
-    <input type="text" id="place" placeholder="Enter Place">
-    <button onclick="generate()">Check</button>
-</div>
-
-<div id="loading" class="hidden">
-    <p>🔍 Reading your karma...</p>
-</div>
-
-<div id="result" class="hidden">
-
-    <!-- Kundli -->
-    <div class="card">
-        <h3>🪐 Kundli Chart</h3>
-        <div class="chart">
-            <div class="box" id="h1"></div>
-            <div class="box" id="h2"></div>
-            <div class="box" id="h3"></div>
-            <div class="box" id="h4"></div>
-            <div class="box" id="h5"></div>
-            <div class="box" id="h6"></div>
-            <div class="box" id="h7"></div>
-            <div class="box" id="h8"></div>
-            <div class="box" id="h9"></div>
-            <div class="box" id="h10"></div>
-            <div class="box" id="h11"></div>
-            <div class="box" id="h12"></div>
-        </div>
-    </div>
-
-    <!-- Karma -->
-    <div class="card">
-        <h3 id="shock"></h3>
-        <p>Karma Score: <span id="score"></span>%</p>
-    </div>
-
-    <!-- Life Events -->
-    <div class="card">
-        <h4>Life Events</h4>
-        <ul id="life"></ul>
-    </div>
-
-    <!-- Symptoms -->
-    <div class="card">
-        <h4>Symptoms</h4>
-        <ul id="symptoms"></ul>
-    </div>
-
-    <!-- Remedies -->
-    <div class="card">
-        <h4>Remedies</h4>
-        <ul id="remedies"></ul>
-    </div>
-
-    <!-- Last 2 Hours -->
-    <div class="card">
-        <h4>Last 2 Hours</h4>
-        <ul id="last"></ul>
-    </div>
-
-    <!-- Locked -->
-    <div class="card lock">
-        <h4>Next 2 Hours 🔒</h4>
-        <p>Hidden insights...</p>
-    </div>
-
-    <button onclick="unlock()">🔓 Unlock ₹19</button>
-
-</div>
-
+<div class="card">
+    <h4>🏠 Vastu Tips</h4>
+    <ul id="vastu"></ul>
 </div>
 
 <script>
 async function generate() {
-
     document.getElementById("form").classList.add("hidden");
     document.getElementById("loading").classList.remove("hidden");
 
     try {
-
         const dob = document.getElementById("dob").value;
         const time = document.getElementById("time").value;
         const place = document.getElementById("place").value;
@@ -155,11 +86,9 @@ async function generate() {
 
         const data = await res.json();
 
-        console.log("🔥 API RESPONSE:", data);
-
-        // ❌ HANDLE FAILURE FIRST
         if (!data.success) {
             document.getElementById("loading").classList.add("hidden");
+            document.getElementById("form").classList.remove("hidden");
             alert(data.message || "API Failed");
             return;
         }
@@ -169,19 +98,17 @@ async function generate() {
         document.getElementById("loading").classList.add("hidden");
         document.getElementById("result").classList.remove("hidden");
 
-        // ✅ SAFE SET VALUES
-        document.getElementById("shock").innerText = result.shockLine || "No Data";
+        document.getElementById("shock").innerText = result.shockLine || "Karmic Alert";
         document.getElementById("score").innerText = result.karmaScore || 0;
 
-        // CLEAR OLD DATA
-        document.getElementById("life").innerHTML = "";
-        document.getElementById("symptoms").innerHTML = "";
-        document.getElementById("remedies").innerHTML = "";
-        document.getElementById("last").innerHTML = "";
+        // Reset lists
+        const sections = ["life", "symptoms", "remedies", "last", "vastu"];
+        sections.forEach(s => document.getElementById(s).innerHTML = "");
 
-        // FILL DATA
+        // Fill Life Events (Now supports Year + Event objects)
         (result.lifeEvents || []).forEach(e => {
-            document.getElementById("life").innerHTML += `<li>${e}</li>`;
+            const display = typeof e === 'object' ? `<b>${e.year}:</b> ${e.event}` : e;
+            document.getElementById("life").innerHTML += `<li>${display}</li>`;
         });
 
         (result.symptoms || []).forEach(e => {
@@ -189,33 +116,39 @@ async function generate() {
         });
 
         (result.remedies || []).forEach(e => {
-            document.getElementById("remedies").innerHTML += `<li>🪔 ${e}</li>`;
+            document.getElementById("remedies").innerHTML += `<li>${e}</li>`;
         });
 
-        (result.last2Hours || []).forEach(e => {
+        // Fill Vastu Tips
+        (result.vastuTips || []).forEach(e => {
+            document.getElementById("vastu").innerHTML += `<li>${e}</li>`;
+        });
+
+        // Handle Last 2 Hours (Array or String)
+        const lastData = Array.isArray(result.last2Hours) ? result.last2Hours : [result.last2Hours];
+        lastData.forEach(e => {
             document.getElementById("last").innerHTML += `<li>${e}</li>`;
         });
 
-        // 🔮 KUNDLI FIX
+        // 🪐 KUNDLI RENDERING
         for (let i = 1; i <= 12; i++) {
             document.getElementById("h" + i).innerHTML = `<b>H${i}</b>`;
         }
 
         if (result.kundali && result.kundali.planets) {
             result.kundali.planets.forEach(p => {
-                if (!p.house) return;
-
-                document.getElementById("h" + p.house).innerHTML +=
-                    `<div>${p.name}</div>`;
+                if (p.house) {
+                    const houseDiv = document.getElementById("h" + p.house);
+                    houseDiv.innerHTML += `<div style="color:#60a5fa; font-weight:bold;">${p.name}</div>`;
+                }
             });
         }
 
     } catch (err) {
         console.error("❌ ERROR:", err);
-        alert("Something broke. Check console.");
+        alert("Connection lost. Please try again.");
+        document.getElementById("loading").classList.add("hidden");
+        document.getElementById("form").classList.remove("hidden");
     }
 }
 </script>
-
-</body>
-</html>
