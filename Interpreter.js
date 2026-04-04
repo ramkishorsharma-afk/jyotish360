@@ -32,3 +32,11 @@ function interpretKarmicSymptoms(planets, dob) {
 }
 
 module.exports = { interpretKarmicSymptoms };
+function getLalKitabHouses(planets) {
+    // Simple logic (can upgrade later)
+
+    return planets.map((p, index) => ({
+        name: p.name,
+        house: (index % 12) + 1 // temporary house mapping
+    }));
+}
