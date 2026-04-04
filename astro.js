@@ -1,81 +1,87 @@
-const axios = require("axios");
+const swisseph = require('@swisseph/node');
+const path = require('path');
 
-const API_KEY = process.env.ASTROLOGY_API_TOKEN;
+// 1. Initialize Ephemeris (Points to the data files for planetary positions)
+// The library handles this automatically, but we set the Sidereal mode to Lahiri
+swisseph.setSiderealMode(swisseph.SiderealMode.Lahiri);
 
+/**
+ * Local Kundli Calculation (Free & Open Source)
+ */
 async function getKundali(dob, time, lat, lon) {
     try {
-        const [year, month, day] = dob.split("-");
-        const [hour, min] = time.split(":");
+        const [year, month, day] = dob.split('-').map(Number);
+        const [hour, min] = time.split(':').map(Number);
 
-        const payload = {
-            day: +day,
-            month: +month,
-            year: +year,
-            hour: +hour,
-            min: +min,
-            lat,
-            lon,
-            tzone: 5.5
-        };
+        // Convert to Julian Day (Standard astronomical time)
+        // Note: Assumes input is already UTC or adjusted for TZone
+        const jd = swisseph.julianDay(year, month, day, hour + (min / 60));
 
-        // 🔥 1. GET PLANETS
-        const planetsRes = await axios.post(
-            "https://json.astrologyapi.com/v1/planets",
-            payload,
-            {
-                headers: {
-                    "x-astrologyapi-key": API_KEY
-                }
-            }
-        );
+        // 2. Calculate Houses (Ascendant/Lagna)
+        // HouseSystem.WholeSign is standard for many Vedic/Lal Kitab interpretations
+        const houses = swisseph.calculateHouses(jd, lat, lon, swisseph.HouseSystem.WholeSign);
 
-        // 🔥 2. GET ASCENDANT
-        const birthRes = await axios.post(
-            "https://json.astrologyapi.com/v1/birth_details",
-            payload,
-            {
-                headers: {
-                    "x-astrologyapi-key": API_KEY
-                }
-            }
-        );
-
-        const planets = planetsRes.data;
-        const ascendant = birthRes.data.ascendant;
-
-        if (!Array.isArray(planets)) return null;
-
-        // 🔥 REAL HOUSE CALCULATION (BASED ON ASC SIGN)
-        const SIGN_ORDER = [
-            "Aries","Taurus","Gemini","Cancer","Leo","Virgo",
-            "Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"
+        // 3. Calculate Planets
+        const planetIds = [
+            { id: swisseph.Planet.Sun, name: "Sun" },
+            { id: swisseph.Planet.Moon, name: "Moon" },
+            { id: swisseph.Planet.Mars, name: "Mars" },
+            { id: swisseph.Planet.Mercury, name: "Mercury" },
+            { id: swisseph.Planet.Jupiter, name: "Jupiter" },
+            { id: swisseph.Planet.Venus, name: "Venus" },
+            { id: swisseph.Planet.Saturn, name: "Saturn" },
+            { id: swisseph.Planet.MeanNode, name: "Rahu" }
         ];
 
-        const ascIndex = SIGN_ORDER.indexOf(ascendant);
-
-        const mapped = planets.map(p => {
-            const signIndex = SIGN_ORDER.indexOf(p.sign);
-
-            let house = signIndex - ascIndex + 1;
-            if (house <= 0) house += 12;
+        const planets = planetIds.map(p => {
+            const pos = swisseph.calculatePosition(jd, p.id, swisseph.OutputFlag.Sidereal);
+            
+            // Calculate House Position (Degree / 30)
+            // Adjust based on Ascendant for more "Actual" accuracy
+            const housePos = Math.floor(((pos.longitude - houses.ascendant + 360) % 360) / 30) + 1;
 
             return {
                 name: p.name,
-                sign: p.sign,
-                degree: p.normDegree,
-                house
+                longitude: pos.longitude,
+                house: housePos,
+                isRetrograde: pos.longitudeSpeed < 0
             };
         });
 
+        // Add Ketu (Always 180 degrees from Rahu)
+        const rahu = planets.find(p => p.name === "Rahu");
+        planets.push({
+            name: "Ketu",
+            longitude: (rahu.longitude + 180) % 360,
+            house: ((rahu.house + 6) % 12) || 12,
+            isRetrograde: true
+        });
+
         return {
-            planet_position: mapped,
-            ascendant
+            ascendant: houses.ascendant,
+            planets: planets,
+            luckScore: calculateLuckScore(planets) // Our custom logic
         };
 
-    } catch (err) {
-        console.error("❌ ASTRO ERROR:", err.response?.data || err.message);
-        return null;
+    } catch (error) {
+        console.error("Calculation Error:", error);
+        throw error;
     }
+}
+
+/**
+ * 4. Custom Luck/Karma Score Logic
+ * This replaces "False Predictions" with mathematical dignity
+ */
+function calculateLuckScore(planets) {
+    let score = 60; // Starting neutral score
+    planets.forEach(p => {
+        // Simple logic: Planets in 6, 8, 12 houses reduce the "Luck" score
+        if ([6, 8, 12].includes(p.house)) score -= 5;
+        // Exalted positions (simplified example)
+        if (p.name === "Sun" && p.house === 1) score += 10; 
+    });
+    return Math.max(0, Math.min(100, score));
 }
 
 module.exports = { getKundali };
