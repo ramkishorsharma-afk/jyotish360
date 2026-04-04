@@ -6,6 +6,11 @@ const SIGN_ORDER = [
 ];
 
 function getHouse(sign, ascendant) {
+    if (!sign || !ascendant) return null;
+
+    sign = sign.trim();
+    ascendant = ascendant.trim();
+
     const signIndex = SIGN_ORDER.indexOf(sign);
     const ascIndex = SIGN_ORDER.indexOf(ascendant);
 
@@ -44,15 +49,15 @@ async function getKundali(dob, time, lat, lon) {
 
         const data = response.data;
 
-        if (!Array.isArray(data)) {
-            console.log("❌ API RESPONSE:", data);
-            return null;
-        }
+        if (!Array.isArray(data)) return null;
 
-        // find ascendant
+        // ✅ Find Ascendant
         const asc = data.find(p => p.name === "Ascendant");
         const ascSign = asc?.sign;
 
+        if (!ascSign) return null;
+
+        // ✅ Map planets with house
         const planets = data.map(p => ({
             name: p.name,
             sign: p.sign,
@@ -64,8 +69,7 @@ async function getKundali(dob, time, lat, lon) {
         };
 
     } catch (error) {
-        console.log("❌ ASTRO ERROR:");
-        console.log(error.response?.data || error.message);
+        console.log("ASTRO ERROR:", error.response?.data || error.message);
         return null;
     }
 }
