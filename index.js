@@ -39,6 +39,7 @@ app.post('/generate', async (req, res) => {
         const kundali = await getKundali(dob, time, lat, lon);
 
         if (!kundali || !kundali.planet_position) {
+            console.log("PLANETS:", planets);
             return res.json({
                 success: false,
                 message: "Astrology API failed"
