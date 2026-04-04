@@ -136,71 +136,85 @@ button {
 </div>
 
 <script>
-
 async function generate() {
 
     document.getElementById("form").classList.add("hidden");
     document.getElementById("loading").classList.remove("hidden");
 
-    const dob = document.getElementById("dob").value;
-    const time = document.getElementById("time").value;
-    const place = document.getElementById("place").value;
+    try {
 
-    const res = await fetch("/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dob, time, place })
-    });
+        const dob = document.getElementById("dob").value;
+        const time = document.getElementById("time").value;
+        const place = document.getElementById("place").value;
 
-    const data = await res.json();
+        const res = await fetch("/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dob, time, place })
+        });
 
-    document.getElementById("loading").classList.add("hidden");
-    document.getElementById("result").classList.remove("hidden");
+        const data = await res.json();
 
-    // Karma
-    document.getElementById("shock").innerText = data.data.shockLine;
-    document.getElementById("score").innerText = data.data.karmaScore;
+        console.log("🔥 API RESPONSE:", data);
 
-    // Clear lists
-    document.getElementById("life").innerHTML = "";
-    document.getElementById("symptoms").innerHTML = "";
-    document.getElementById("remedies").innerHTML = "";
-    document.getElementById("last").innerHTML = "";
+        // ❌ HANDLE FAILURE FIRST
+        if (!data.success) {
+            document.getElementById("loading").classList.add("hidden");
+            alert(data.message || "API Failed");
+            return;
+        }
 
-    // Fill data
-    data.data.lifeEvents.forEach(e => {
-        document.getElementById("life").innerHTML += `<li>${e}</li>`;
-    });
+        const result = data.data;
 
-    data.data.symptoms.forEach(e => {
-        document.getElementById("symptoms").innerHTML += `<li>${e}</li>`;
-    });
+        document.getElementById("loading").classList.add("hidden");
+        document.getElementById("result").classList.remove("hidden");
 
-    data.data.remedies.forEach(e => {
-        document.getElementById("remedies").innerHTML += `<li>🪔 ${e}</li>`;
-    });
+        // ✅ SAFE SET VALUES
+        document.getElementById("shock").innerText = result.shockLine || "No Data";
+        document.getElementById("score").innerText = result.karmaScore || 0;
 
-    data.data.last2Hours.forEach(e => {
-        document.getElementById("last").innerHTML += `<li>${e}</li>`;
-    });
+        // CLEAR OLD DATA
+        document.getElementById("life").innerHTML = "";
+        document.getElementById("symptoms").innerHTML = "";
+        document.getElementById("remedies").innerHTML = "";
+        document.getElementById("last").innerHTML = "";
 
-    // Kundli Chart
-    for (let i = 1; i <= 12; i++) {
-        document.getElementById("h" + i).innerHTML = `<b>H${i}</b><br>`;
+        // FILL DATA
+        (result.lifeEvents || []).forEach(e => {
+            document.getElementById("life").innerHTML += `<li>${e}</li>`;
+        });
+
+        (result.symptoms || []).forEach(e => {
+            document.getElementById("symptoms").innerHTML += `<li>${e}</li>`;
+        });
+
+        (result.remedies || []).forEach(e => {
+            document.getElementById("remedies").innerHTML += `<li>🪔 ${e}</li>`;
+        });
+
+        (result.last2Hours || []).forEach(e => {
+            document.getElementById("last").innerHTML += `<li>${e}</li>`;
+        });
+
+        // 🔮 KUNDLI FIX
+        for (let i = 1; i <= 12; i++) {
+            document.getElementById("h" + i).innerHTML = `<b>H${i}</b>`;
+        }
+
+        if (result.kundali && result.kundali.planets) {
+            result.kundali.planets.forEach(p => {
+                if (!p.house) return;
+
+                document.getElementById("h" + p.house).innerHTML +=
+                    `<div>${p.name}</div>`;
+            });
+        }
+
+    } catch (err) {
+        console.error("❌ ERROR:", err);
+        alert("Something broke. Check console.");
     }
-
-    data.data.kundali.planets.forEach(p => {
-        if (!p.house) return;
-
-        document.getElementById("h" + p.house).innerHTML +=
-            `<div>${p.name}</div>`;
-    });
 }
-
-function unlock() {
-    alert("💰 Payment integration next step");
-}
-
 </script>
 
 </body>
