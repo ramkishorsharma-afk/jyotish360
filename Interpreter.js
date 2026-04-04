@@ -1,3 +1,10 @@
+function getLalKitabHouses(planets) {
+    return planets.map((p, index) => ({
+        name: p.name,
+        house: (index % 12) + 1
+    }));
+}
+
 function interpretKarmicSymptoms(planets, dob) {
 
     let karmaScore = 80;
@@ -31,12 +38,7 @@ function interpretKarmicSymptoms(planets, dob) {
     };
 }
 
-module.exports = { interpretKarmicSymptoms };
-function getLalKitabHouses(planets) {
-    // Simple logic (can upgrade later)
-
-    return planets.map((p, index) => ({
-        name: p.name,
-        house: (index % 12) + 1 // temporary house mapping
-    }));
-}
+module.exports = {
+    interpretKarmicSymptoms,
+    getLalKitabHouses
+};
