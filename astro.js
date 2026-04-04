@@ -1,68 +1,66 @@
 const axios = require('axios');
 require('dotenv').config();
 
-const auth = {
-    username: process.env.ASTROLOGY_API_USER_ID,
-    password: process.env.ASTROLOGY_API_KEY
-};
+const USER_ID = process.env.ASTROLOGY_API_USER_ID;
+const API_KEY = process.env.ASTROLOGY_API_KEY;
 
-async function getKundali(dob, time, lat, lon) {
-    try {
-        const [year, month, day] = dob.split('-');
-        const [hour, min] = time.split(':');
-
-        const payload = {
-            day: +day,
-            month: +month,
-            year: +year,
-            hour: +hour,
-            min: +min,
-            lat,
-            lon,
-            tzone: 5.5
-        };
-
-        const response = await axios.post(
-            'https://json.astrologyapi.com/v1/planets/extended',
-            payload,
-            { auth }
-        );
-
-        console.log("🔍 FULL RESPONSE:", JSON.stringify(response.data, null, 2));
-
-        // 🔥 HANDLE ALL POSSIBLE STRUCTURES
-        let planetsArray = null;
-
-        if (Array.isArray(response.data)) {
-            planetsArray = response.data;
-        } else if (Array.isArray(response.data.planets)) {
-            planetsArray = response.data.planets;
-        } else if (Array.isArray(response.data.output)) {
-            planetsArray = response.data.output;
-        } else if (Array.isArray(response.data.data)) {
-            planetsArray = response.data.data;
-        }
-
-        if (!planetsArray) {
-            throw new Error("No planets array found in API response");
-        }
-
-        const planets = planetsArray.map(p => ({
-            name: p.name || p.planet,
-            rasi: { name: p.sign || p.rasi }
-        }));
-
-        return {
-            planet_position: planets
-        };
-
-    } catch (error) {
-        console.error("❌ ASTRO ERROR:");
-        console.error("Status:", error.response?.status);
-        console.error("Data:", error.response?.data);
-        console.error("Message:", error.message);
-        return null;
-    }
+function getAuthHeader() {
+  const token = Buffer.from(`${USER_ID}:${API_KEY}`).toString('base64');
+  return { Authorization: `Basic ${token}` };
 }
 
-module.exports = { getKundali };
+// 🌌 Kundali (planet positions)
+async function getKundali(dob, time, lat, lon) {
+  const [year, month, day] = dob.split('-');
+  const [hour, min] = time.split(':');
+
+  const payload = { day:+day, month:+month, year:+year, hour:+hour, min:+min, lat, lon, tzone:5.5 };
+
+  try {
+    const response = await axios.post(
+      'https://json.astrologyapi.com/v1/planets/extended',
+      payload,
+      { headers: { ...getAuthHeader(), 'Content-Type':'application/json' } }
+    );
+
+    const planetsArray =
+      response.data.planets ||
+      response.data.output ||
+      response.data.data ||
+      (Array.isArray(response.data) ? response.data : null);
+
+    if (!planetsArray) throw new Error("No planets array found in API response");
+
+    const planets = planetsArray.map(p => ({
+      name: p.name || p.planet,
+      rasi: { name: p.sign || p.rasi || '' }
+    }));
+
+    return { planet_position: planets };
+  } catch (error) {
+    console.error("❌ Kundali Error:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+// 📜 Lal Kitab Houses
+async function getLalKitabHouses(dob, time, lat, lon) {
+  const [year, month, day] = dob.split('-');
+  const [hour, min] = time.split(':');
+
+  const payload = { day:+day, month:+month, year:+year, hour:+hour, min:+min, lat, lon, tzone:5.5 };
+
+  try {
+    const response = await axios.post(
+      'https://json.astrologyapi.com/v1/lalkitab_houses',
+      payload,
+      { headers: { ...getAuthHeader(), 'Content-Type':'application/json', 'Accept-Language':'hi' } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lal Kitab Error:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+module.exports = { getKundali, getLalKitabHouses };
