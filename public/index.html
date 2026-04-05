@@ -1,83 +1,142 @@
-<style>
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        /* Universe Background */
-        background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), 
-                    url('https://images.unsplash.com/photo-1464802686167-b939a6910659?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
-        background-size: cover;
-        background-attachment: fixed;
-        background-position: center;
-        color: white;
-        text-align: center;
-        padding: 20px;
-        margin: 0;
-    }
-    .container {
-        max-width: 500px;
-        margin: auto;
-    }
-    /* Glassmorphism Effect for Cards */
-    .card {
-        background: rgba(30, 41, 59, 0.7);
-        backdrop-filter: blur(10px);
-        padding: 15px;
-        border-radius: 15px;
-        margin-top: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-    }
-    input, button {
-        width: 100%;
-        padding: 14px;
-        margin: 10px 0;
-        border-radius: 10px;
-        border: none;
-        box-sizing: border-box;
-    }
-    button {
-        background: linear-gradient(45deg, #f97316, #ea580c);
-        color: white;
-        font-weight: bold;
-        cursor: pointer;
-        transition: transform 0.2s;
-    }
-    button:hover {
-        transform: scale(1.02);
-    }
-    .chart {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr); /* 3x4 grid for better mobile view */
-        gap: 8px;
-    }
-    .box {
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        background: rgba(0, 0, 0, 0.3);
-        min-height: 80px;
-        padding: 5px;
-        font-size: 11px;
-        border-radius: 5px;
-    }
-    .box b { color: #f97316; display: block; margin-bottom: 3px; }
-    .hidden { display: none; }
-    .lock { filter: blur(8px); opacity: 0.5; pointer-events: none; }
-    ul { text-align: left; padding-left: 20px; list-style-type: '✨ '; }
-</style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jyotish360 | Karma Check</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), 
+                        url('https://images.unsplash.com/photo-1464802686167-b939a6910659?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+        }
+        .container { max-width: 500px; margin: auto; }
+        .card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+        input, button {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: none;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        input { background: rgba(255, 255, 255, 0.9); color: #000; }
+        button {
+            background: linear-gradient(45deg, #f97316, #ea580c);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(249, 115, 22, 0.4); }
+        .chart { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .box {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.3);
+            min-height: 80px;
+            padding: 5px;
+            font-size: 11px;
+            border-radius: 8px;
+        }
+        .box b { color: #f97316; display: block; margin-bottom: 3px; }
+        .hidden { display: none !important; }
+        ul { text-align: left; padding-left: 20px; list-style-type: '✨ '; }
+        #loading { font-size: 18px; margin-top: 50px; }
+    </style>
+</head>
+<body>
 
-<div class="card">
-    <h4>🏠 Vastu Tips</h4>
-    <ul id="vastu"></ul>
+<div class="container">
+    <h1 style="margin-bottom: 5px;">🔮 Jyotish360</h1>
+    <p style="margin-top: 0; opacity: 0.8;">Unlock your cosmic roadmap</p>
+
+    <div id="form-container" class="card">
+        <h3>Enter Details</h3>
+        <input type="date" id="dob" required>
+        <input type="time" id="time" required>
+        <input type="text" id="place" placeholder="City Name (e.g. Rohtak)" required>
+        <button onclick="generate()">Check Karma</button>
+    </div>
+
+    <div id="loading" class="hidden">
+        <div class="card">
+            <p>🌌 Aligning planets for your chart...</p>
+        </div>
+    </div>
+
+    <div id="result" class="hidden">
+        
+        <div class="card">
+            <h3 id="shock">Karmic Insight</h3>
+            <p style="font-size: 20px;">Karma Score: <span id="score" style="color:#f97316; font-weight:bold;">0</span>%</p>
+        </div>
+
+        <div class="card">
+            <h4>🪐 Kundli Chart</h4>
+            <div class="chart">
+                <div class="box" id="h1"></div><div class="box" id="h2"></div><div class="box" id="h3"></div>
+                <div class="box" id="h4"></div><div class="box" id="h5"></div><div class="box" id="h6"></div>
+                <div class="box" id="h7"></div><div class="box" id="h8"></div><div class="box" id="h9"></div>
+                <div class="box" id="h10"></div><div class="box" id="h11"></div><div class="box" id="h12"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h4>🏠 Vastu Tips</h4>
+            <ul id="vastu"></ul>
+        </div>
+
+        <div class="card">
+            <h4>🔮 Life Events</h4>
+            <ul id="life"></ul>
+        </div>
+
+        <div class="card">
+            <h4>⚡ Symptoms</h4>
+            <ul id="symptoms"></ul>
+        </div>
+
+        <div class="card">
+            <h4>🪔 Remedies</h4>
+            <ul id="remedies"></ul>
+        </div>
+
+        <button onclick="location.reload()" style="background: #334155;">Check Another</button>
+    </div>
 </div>
 
 <script>
 async function generate() {
-    document.getElementById("form").classList.add("hidden");
+    const dob = document.getElementById("dob").value;
+    const time = document.getElementById("time").value;
+    const place = document.getElementById("place").value;
+
+    if(!dob || !time || !place) {
+        alert("Please fill all details");
+        return;
+    }
+
+    // Switch views
+    document.getElementById("form-container").classList.add("hidden");
     document.getElementById("loading").classList.remove("hidden");
 
     try {
-        const dob = document.getElementById("dob").value;
-        const time = document.getElementById("time").value;
-        const place = document.getElementById("place").value;
-
         const res = await fetch("/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -87,50 +146,37 @@ async function generate() {
         const data = await res.json();
 
         if (!data.success) {
-            document.getElementById("loading").classList.add("hidden");
-            document.getElementById("form").classList.remove("hidden");
-            alert(data.message || "API Failed");
+            alert(data.message || "Calculation failed. Please try again.");
+            location.reload();
             return;
         }
 
         const result = data.data;
 
+        // Show Results
         document.getElementById("loading").classList.add("hidden");
         document.getElementById("result").classList.remove("hidden");
 
+        // Fill Score & Header
         document.getElementById("shock").innerText = result.shockLine || "Karmic Alert";
         document.getElementById("score").innerText = result.karmaScore || 0;
 
-        // Reset lists
-        const sections = ["life", "symptoms", "remedies", "last", "vastu"];
-        sections.forEach(s => document.getElementById(s).innerHTML = "");
+        // Reset and Fill Lists
+        const fillList = (id, items) => {
+            const el = document.getElementById(id);
+            el.innerHTML = "";
+            (items || []).forEach(item => {
+                const text = typeof item === 'object' ? `<b>${item.year}:</b> ${item.event}` : item;
+                el.innerHTML += `<li>${text}</li>`;
+            });
+        };
 
-        // Fill Life Events (Now supports Year + Event objects)
-        (result.lifeEvents || []).forEach(e => {
-            const display = typeof e === 'object' ? `<b>${e.year}:</b> ${e.event}` : e;
-            document.getElementById("life").innerHTML += `<li>${display}</li>`;
-        });
+        fillList("life", result.lifeEvents);
+        fillList("symptoms", result.symptoms);
+        fillList("remedies", result.remedies);
+        fillList("vastu", result.vastuTips);
 
-        (result.symptoms || []).forEach(e => {
-            document.getElementById("symptoms").innerHTML += `<li>${e}</li>`;
-        });
-
-        (result.remedies || []).forEach(e => {
-            document.getElementById("remedies").innerHTML += `<li>${e}</li>`;
-        });
-
-        // Fill Vastu Tips
-        (result.vastuTips || []).forEach(e => {
-            document.getElementById("vastu").innerHTML += `<li>${e}</li>`;
-        });
-
-        // Handle Last 2 Hours (Array or String)
-        const lastData = Array.isArray(result.last2Hours) ? result.last2Hours : [result.last2Hours];
-        lastData.forEach(e => {
-            document.getElementById("last").innerHTML += `<li>${e}</li>`;
-        });
-
-        // 🪐 KUNDLI RENDERING
+        // Render Kundli
         for (let i = 1; i <= 12; i++) {
             document.getElementById("h" + i).innerHTML = `<b>H${i}</b>`;
         }
@@ -146,9 +192,10 @@ async function generate() {
 
     } catch (err) {
         console.error("❌ ERROR:", err);
-        alert("Connection lost. Please try again.");
-        document.getElementById("loading").classList.add("hidden");
-        document.getElementById("form").classList.remove("hidden");
+        alert("Server is busy. Please try again in a moment.");
+        location.reload();
     }
 }
 </script>
+</body>
+</html>
