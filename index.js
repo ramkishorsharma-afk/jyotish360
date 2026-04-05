@@ -19,19 +19,13 @@ const razorpay = new Razorpay({
 
 app.post('/generate', async (req, res) => {
     try {
-        let { dob, time, place, isPaid } = req.body;
+        let { dob, time, isPaid } = req.body;
 
-        // Rohtak Coordinates (User's Base)
+        // Default to Rohtak coordinates
         const lat = 28.89; 
         const lon = 76.61;
 
         const kundali = await getKundali(dob, time, lat, lon);
-
-        if (!kundali || !kundali.planets) {
-            throw new Error("Calculation engine returned no data");
-        }
-
-        // Generate insights using the planets and DOB
         const karma = interpretKarmicSymptoms(kundali.planets, dob);
 
         res.json({
@@ -58,19 +52,6 @@ app.post('/generate', async (req, res) => {
             success: false,
             message: "Internal Error: " + error.message
         });
-    }
-});
-
-app.post('/create-order', async (req, res) => {
-    try {
-        const order = await razorpay.orders.create({
-            amount: 19900, 
-            currency: "INR",
-            receipt: "rcpt_" + Date.now(),
-        });
-        res.json(order);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
     }
 });
 
