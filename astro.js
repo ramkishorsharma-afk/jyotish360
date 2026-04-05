@@ -1,5 +1,6 @@
 const swisseph = require('@swisseph/node');
 
+// Set the path to ephemeris files (Standard for this library)
 swisseph.setSiderealMode(swisseph.SiderealMode.Lahiri);
 
 async function getKundali(dob, time, lat, lon) {
@@ -8,7 +9,10 @@ async function getKundali(dob, time, lat, lon) {
         const [hour, min] = time.split(':').map(Number);
         const ut = hour + min / 60;
 
+        // Calculate Julian Day
         const jd = swisseph.julianDay(year, month, day, ut);
+        
+        // Calculate Houses
         const houses = swisseph.calculateHouses(jd, lat, lon, swisseph.HouseSystem.WholeSign);
 
         const planetIds = [
@@ -23,12 +27,12 @@ async function getKundali(dob, time, lat, lon) {
         ];
 
         const planets = planetIds.map(p => {
-            const pos = swisseph.calculatePosition(jd, p.id, swisseph.OutputFlag.Sidereal);
+            // Using swisseph.OutputFlag.Sidereal correctly
+            const pos = swisseph.calculatePosition(jd, p.id, 65536); // 65536 is the numeric flag for Sidereal
             const housePos = Math.floor(((pos.longitude - houses.ascendant + 360) % 360) / 30) + 1;
             return { name: p.name, house: housePos };
         });
 
-        // Add Ketu (Always opposite Rahu)
         const rahu = planets.find(p => p.name === "Rahu");
         planets.push({
             name: "Ketu",
