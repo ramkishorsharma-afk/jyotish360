@@ -1,21 +1,23 @@
 const swisseph = require('@swisseph/node');
 
-// Numeric flag for Sidereal (Lahiri) calculations
+// Strictly numeric flag for Sidereal (Lahiri) calculations
 const SEFLG_SIDEREAL = 65536;
 
 async function getKundali(dob, time, lat, lon) {
     try {
-        // Ensure all inputs are strictly numbers for the C++ engine
+        // 1. Force strict numeric conversion for all inputs
         const [year, month, day] = dob.split('-').map(Number);
         const [hour, min] = time.split(':').map(Number);
-        const nLat = parseFloat(lat);
-        const nLon = parseFloat(lon);
-        const ut = hour + (min / 60);
-
-        // Calculate Julian Day
-        const jd = swisseph.julianDay(year, month, day, ut);
+        const nLat = Number(parseFloat(lat));
+        const nLon = Number(parseFloat(lon));
         
-        // Calculate Houses (Whole Sign)
+        // Ensure UT is a valid number
+        const ut = Number(hour + (min / 60));
+
+        // 2. Calculate Julian Day and force to Number type
+        const jd = Number(swisseph.julianDay(year, month, day, ut));
+        
+        // 3. Calculate Houses
         const houses = swisseph.calculateHouses(jd, nLat, nLon, swisseph.HouseSystem.WholeSign);
 
         const planetIds = [
@@ -30,12 +32,15 @@ async function getKundali(dob, time, lat, lon) {
         ];
 
         const planets = planetIds.map(p => {
-            // Use the numeric flag to avoid initialization undefined errors
-            const pos = swisseph.calculatePosition(jd, p.id, SEFLG_SIDEREAL);
+            // FIX: Explicitly wrap inputs in Number() to satisfy the C++ wrapper
+            const pos = swisseph.calculatePosition(Number(jd), Number(p.id), Number(SEFLG_SIDEREAL));
+            
+            // Calculate House Position
             const housePos = Math.floor(((pos.longitude - houses.ascendant + 360) % 360) / 30) + 1;
             return { name: p.name, house: housePos };
         });
 
+        // Add Ketu (180 degrees from Rahu)
         const rahu = planets.find(p => p.name === "Rahu");
         planets.push({
             name: "Ketu",
@@ -44,7 +49,7 @@ async function getKundali(dob, time, lat, lon) {
 
         return { planets, ascendant: houses.ascendant };
     } catch (error) {
-        console.error("❌ Astro Engine Error:", error);
+        console.error("❌ Engine Error Details:", error);
         throw error;
     }
 }
