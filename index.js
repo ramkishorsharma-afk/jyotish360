@@ -13,10 +13,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Serve frontend
+// ✅ Serve frontend files from the 'public' folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ Razorpay Setup
+// ✅ Razorpay Setup (Ensure these are in your Render Environment Variables)
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -27,17 +27,21 @@ app.post('/generate', async (req, res) => {
     try {
         let { dob, time, place, isPaid } = req.body;
 
-        // Date formatting logic (DD-MM-YYYY to YYYY-MM-DD)
+        if (!dob || !time) {
+            return res.status(400).json({ success: false, message: "Date and Time are required" });
+        }
+
+        // Date formatting logic (Handles DD-MM-YYYY to YYYY-MM-DD for the engine)
         if (dob.includes('-') && dob.split('-')[0].length === 2) {
             const [d, m, y] = dob.split('-');
             dob = `${y}-${m}-${d}`;
         }
 
-        // Hardcoded Rohtak coordinates for now (update to dynamic later)
+        // Hardcoded Rohtak coordinates (You are based here)
         const lat = 28.89; 
         const lon = 76.61;
 
-        // 1. Get raw data from our Swiss Ephemeris engine
+        // 1. Get raw planetary positions from Swiss Ephemeris
         const kundali = await getKundali(dob, time, lat, lon);
 
         if (!kundali || !kundali.planets) {
@@ -47,10 +51,10 @@ app.post('/generate', async (req, res) => {
             });
         }
 
-        // 2. Interpret the raw math into human language
+        // 2. Interpret the raw math into Lal Kitab & Vastu insights
         const karma = interpretKarmicSymptoms(kundali.planets, dob);
 
-        // 3. Construct the response with Lal Kitab & Vastu focus
+        // 3. Construct the response
         res.json({
             success: true,
             data: {
@@ -58,16 +62,17 @@ app.post('/generate', async (req, res) => {
                     planets: kundali.planets,
                     ascendant: kundali.ascendant
                 },
-                karmaScore: kundali.luckScore, // Directly from our new engine
+                // FIX: Use 'karma.karmaScore' from the interpreter, not 'kundali.luckScore'
+                karmaScore: karma.karmaScore, 
                 shockLine: karma.shockLine,
-                lifeEvents: karma.lifeEvents, // Past life/major events with years
-                symptoms: karma.symptoms, // "Symptom caused by X planet"
-                remedies: karma.remedies, // Lal Kitab: Salt, Rituals, etc.
-                vastuTips: karma.vastuTips, // Added Vastu logic based on directional inputs
+                lifeEvents: karma.lifeEvents, 
+                symptoms: karma.symptoms, 
+                remedies: karma.remedies, 
+                vastuTips: karma.vastuTips, 
                 last2Hours: karma.last2Hours,
-                // Only show prediction if payment is confirmed
+                // Prediction locking logic
                 next2Hours: isPaid ? karma.next2Hours : "LOCKED_PAYMENT_REQUIRED",
-                language: req.body.lang || "en" // Supports hi/en
+                language: req.body.lang || "en"
             }
         });
 
@@ -84,7 +89,7 @@ app.post('/generate', async (req, res) => {
 app.post('/create-order', async (req, res) => {
     try {
         const order = await razorpay.orders.create({
-            amount: 19900, // Changed to ₹199.00 (standard for reports)
+            amount: 19900, // ₹199.00
             currency: "INR",
             receipt: "receipt_jw_" + Date.now(),
         });
@@ -94,5 +99,6 @@ app.post('/create-order', async (req, res) => {
     }
 });
 
+// Use Render's dynamic port or default to 3000
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Jyotish360 Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Jyotish360 Server running on port ${PORT}`));
