@@ -1,11 +1,11 @@
 const swisseph = require('@swisseph/node');
 
-// Set Sidereal mode for Indian Astrology (Lahiri)
-swisseph.setSiderealMode(swisseph.SiderealMode.Lahiri);
+// Numeric flag for Sidereal (Lahiri) calculations
+const SEFLG_SIDEREAL = 65536;
 
 async function getKundali(dob, time, lat, lon) {
     try {
-        // Force conversion to numbers to prevent "A number was expected" error
+        // Ensure all inputs are strictly numbers for the C++ engine
         const [year, month, day] = dob.split('-').map(Number);
         const [hour, min] = time.split(':').map(Number);
         const nLat = parseFloat(lat);
@@ -15,7 +15,7 @@ async function getKundali(dob, time, lat, lon) {
         // Calculate Julian Day
         const jd = swisseph.julianDay(year, month, day, ut);
         
-        // Calculate Houses (Whole Sign System)
+        // Calculate Houses (Whole Sign)
         const houses = swisseph.calculateHouses(jd, nLat, nLon, swisseph.HouseSystem.WholeSign);
 
         const planetIds = [
@@ -30,14 +30,12 @@ async function getKundali(dob, time, lat, lon) {
         ];
 
         const planets = planetIds.map(p => {
-            // Use 65536 as the flag for Sidereal calculations
-            const pos = swisseph.calculatePosition(jd, p.id, 65536);
-            // Determine house position based on Ascendant
+            // Use the numeric flag to avoid initialization undefined errors
+            const pos = swisseph.calculatePosition(jd, p.id, SEFLG_SIDEREAL);
             const housePos = Math.floor(((pos.longitude - houses.ascendant + 360) % 360) / 30) + 1;
             return { name: p.name, house: housePos };
         });
 
-        // Add Ketu (always opposite Rahu)
         const rahu = planets.find(p => p.name === "Rahu");
         planets.push({
             name: "Ketu",
@@ -46,7 +44,7 @@ async function getKundali(dob, time, lat, lon) {
 
         return { planets, ascendant: houses.ascendant };
     } catch (error) {
-        console.error("❌ Engine Error:", error);
+        console.error("❌ Astro Engine Error:", error);
         throw error;
     }
 }
