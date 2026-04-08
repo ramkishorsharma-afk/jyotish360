@@ -11,6 +11,8 @@ function toNum(val, name) {
 
 async function getKundali(dob, time, lat, lon) {
     try {
+        console.log("INPUT:", { dob, time, lat, lon });
+
         const [y, m, d] = dob.split("-");
         const [h, min] = time.split(":");
 
@@ -26,31 +28,27 @@ async function getKundali(dob, time, lat, lon) {
 
         const ut = hour + (minute / 60);
 
+        // ✅ ONLY SAFE FUNCTIONS
         swisseph.setEphemerisPath(path.join(__dirname, "ephe"));
 
         const jd = swisseph.julianDay(year, month, day, ut);
 
+        if (!Number.isFinite(jd)) throw new Error("JD failed");
+
         const houses = swisseph.calculateHouses(jd, latitude, longitude);
+
+        if (!houses || !Number.isFinite(houses.ascendant)) {
+            throw new Error("House calc failed");
+        }
 
         const asc = houses.ascendant;
 
-        // 🔥 TEMP SAFE PLANET DATA (NO CRASH)
-        const planets = [
-            { name: "Sun", house: 1 },
-            { name: "Moon", house: 2 },
-            { name: "Mars", house: 3 },
-            { name: "Mercury", house: 4 },
-            { name: "Jupiter", house: 5 },
-            { name: "Venus", house: 6 },
-            { name: "Saturn", house: 7 },
-            { name: "Rahu", house: 8 },
-            { name: "Ketu", house: 2 }
-        ];
+        // ❌ NO calculatePosition (REMOVED COMPLETELY)
 
         return {
             success: true,
             ascendant: asc,
-            planets
+            message: "Engine running (planets temporarily disabled)"
         };
 
     } catch (err) {
