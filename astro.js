@@ -1,156 +1,61 @@
+const path = require('path');
 const swisseph = require('@swisseph/node');
 
-// FLAGS
+// 1. Direct Numeric Constants (Bypasses "undefined" property errors)
+const SE_GREG_CAL = 1;
 const SEFLG_SWIEPH = 2;
 const SEFLG_SIDEREAL = 65536;
+const SE_SIDM_LAHIRI = 1;
+const SE_HSYS_WHOLE_SIGN = 87; // 'W' in numeric form
 
-// SAFE HOUSE SYSTEM (Whole Sign)
-const HOUSE_SYSTEM = 87; // 'W'
-
-// NAKSHATRA LIST
-const NAKSHATRAS = [
-"Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu",
-"Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta",
-"Chitra","Swati","Vishakha","Anuradha","Jyeshtha","Mula","Purva Ashadha",
-"Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada",
-"Uttara Bhadrapada","Revati"
-];
-
-// Lal Kitab basic rules
-function getLalKitabRemedies(planets) {
-    const remedies = [];
-
-    planets.forEach(p => {
-        if (p.name === "Saturn" && p.house === 1) {
-            remedies.push("Donate mustard oil on Saturday");
-        }
-        if (p.name === "Rahu" && p.house === 8) {
-            remedies.push("Keep coconut in flowing water");
-        }
-        if (p.name === "Mars" && p.house === 7) {
-            remedies.push("Avoid anger, donate red lentils");
-        }
-    });
-
-    return remedies;
-}
-
-// SAFE NUMBER CHECK
-function safeNumber(val, name) {
-    const num = Number(val);
-    if (isNaN(num)) throw new Error(`${name} is invalid`);
-    return num;
-}
+// 2. Set Path to BINARY ephemeris files
+const ephePath = path.join(__dirname, 'ephe');
+swisseph.swe_set_ephe_path(ephePath);
+swisseph.swe_set_sid_mode(SE_SIDM_LAHIRI);
 
 async function getKundali(dob, time, lat, lon) {
     try {
-        // ✅ SAFE INPUT PARSE
-        const [year, month, day] = dob.split('-').map(v => safeNumber(v, "DOB"));
-        const [hour, min] = time.split(':').map(v => safeNumber(v, "TIME"));
+        // Force strict numeric parsing
+        const [year, month, day] = dob.split('-').map(num => parseInt(num, 10));
+        const [hour, min] = time.split(':').map(num => parseInt(num, 10));
+        const ut = parseFloat((hour + (min / 60)).toFixed(4));
 
-        const nLat = safeNumber(lat, "Latitude");
-        const nLon = safeNumber(lon, "Longitude");
+        // 3. Julian Day with strict number types
+        const jd = swisseph.swe_julday(year, month, day, ut, SE_GREG_CAL);
+        
+        // 4. House calculation
+        const houses = swisseph.swe_houses(Number(jd), parseFloat(lat), parseFloat(lon), SE_HSYS_WHOLE_SIGN);
 
-        const ut = hour + (min / 60);
-
-        // ✅ INIT ENGINE
-        swisseph.swe_set_ephe_path(__dirname + '/ephe');
-        swisseph.swe_set_sid_mode(swisseph.SE_SIDM_LAHIRI);
-
-        // ✅ JD
-        const jd = swisseph.swe_julday(year, month, day, ut, swisseph.SE_GREG_CAL);
-
-        // ✅ HOUSES
-        const houses = swisseph.swe_houses(jd, nLat, nLon, HOUSE_SYSTEM);
-
-        const asc = houses.ascmc?.[0] || houses.ascendant;
-
-        // PLANETS
         const planetIds = [
-            { id: swisseph.SE_SUN, name: "Sun" },
-            { id: swisseph.SE_MOON, name: "Moon" },
-            { id: swisseph.SE_MARS, name: "Mars" },
-            { id: swisseph.SE_MERCURY, name: "Mercury" },
-            { id: swisseph.SE_JUPITER, name: "Jupiter" },
-            { id: swisseph.SE_VENUS, name: "Venus" },
-            { id: swisseph.SE_SATURN, name: "Saturn" },
-            { id: swisseph.SE_MEAN_NODE, name: "Rahu" }
+            { id: 0, name: "Sun" },
+            { id: 1, name: "Moon" },
+            { id: 4, name: "Mars" },
+            { id: 2, name: "Mercury" },
+            { id: 5, name: "Jupiter" },
+            { id: 3, name: "Venus" },
+            { id: 6, name: "Saturn" },
+            { id: 11, name: "Rahu" }
         ];
 
-        const planets = [];
+        const planets = planetIds.map(p => {
+            // Use direct numbers to satisfy the C++ engine
+            const result = swisseph.swe_calc_ut(
+                Number(jd), 
+                Number(p.id), 
+                Number(SEFLG_SWIEPH | SEFLG_SIDEREAL)
+            );
 
-        for (let p of planetIds) {
-            let result;
+            // Coordinates are usually in result.data[0]
+            const longitude = result.data ? result.data[0] : result.longitude;
+            const housePos = Math.floor(((longitude - houses.ascendant + 360) % 360) / 30) + 1;
 
-            try {
-                result = swisseph.swe_calc_ut(
-                    jd,
-                    p.id,
-                    SEFLG_SWIEPH | SEFLG_SIDEREAL
-                );
-            } catch (err) {
-                console.error(`Planet calc failed: ${p.name}`);
-                continue; // prevent crash
-            }
+            return { name: p.name, house: housePos };
+        });
 
-            if (!result || isNaN(result.longitude)) continue;
-
-            const lonDeg = result.longitude;
-
-            // HOUSE
-            const house = Math.floor(((lonDeg - asc + 360) % 360) / 30) + 1;
-
-            // NAKSHATRA
-            const nakIndex = Math.floor(lonDeg / (360 / 27));
-            const nakshatra = NAKSHATRAS[nakIndex];
-
-            planets.push({
-                name: p.name,
-                longitude: lonDeg,
-                house,
-                nakshatra
-            });
-        }
-
-        // ✅ KETU
-        const rahu = planets.find(p => p.name === "Rahu");
-
-        if (rahu) {
-            planets.push({
-                name: "Ketu",
-                longitude: (rahu.longitude + 180) % 360,
-                house: ((rahu.house + 6) % 12) || 12,
-                nakshatra: rahu.nakshatra
-            });
-        }
-
-        // ✅ BASIC DASHA (MOON BASED)
-        const moon = planets.find(p => p.name === "Moon");
-
-        const dasha = moon
-            ? {
-                current: moon.nakshatra,
-                note: "Basic dasha (full Vimshottari can be added next)"
-            }
-            : null;
-
-        // ✅ LAL KITAB
-        const remedies = getLalKitabRemedies(planets);
-
-        return {
-            ascendant: asc,
-            planets,
-            dasha,
-            remedies
-        };
-
+        return { planets, ascendant: houses.ascendant };
     } catch (error) {
-        console.error("❌ FINAL ENGINE ERROR:", error.message);
-
-        return {
-            success: false,
-            error: error.message
-        };
+        console.error("❌ Fatal Engine Error:", error.message);
+        throw new Error("Calculation Failed: " + error.message);
     }
 }
 
