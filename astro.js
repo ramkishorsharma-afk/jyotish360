@@ -1,85 +1,96 @@
 const swisseph = require('@swisseph/node');
 const path = require('path');
 
-// Safe number conversion
-function safeNumber(val, name) {
-    const num = Number(val);
-    if (isNaN(num)) {
-        throw new Error(`${name} is invalid`);
+// FORCE SAFE NUMBER
+function toNum(val, name) {
+    const n = Number(val);
+    if (!Number.isFinite(n)) {
+        throw new Error(`${name} invalid: ${val}`);
     }
-    return num;
+    return n;
 }
 
 async function getKundali(dob, time, lat, lon) {
     try {
         console.log("INPUT:", { dob, time, lat, lon });
 
-        // ✅ Parse input
-        const [year, month, day] = dob.split('-').map(Number);
-        const [hour, min] = time.split(':').map(Number);
+        // ✅ PARSE DATE
+        const [y, m, d] = dob.split("-");
+        const [h, min] = time.split(":");
 
-        const nLat = safeNumber(lat, "Latitude");
-        const nLon = safeNumber(lon, "Longitude");
+        const year = toNum(y, "year");
+        const month = toNum(m, "month");
+        const day = toNum(d, "day");
 
-        const ut = hour + (min / 60);
+        const hour = toNum(h, "hour");
+        const minute = toNum(min, "minute");
 
-        // ✅ Correct function for this package
-        swisseph.setEphemerisPath(path.join(__dirname, 'ephe'));
+        const latitude = toNum(lat, "latitude");
+        const longitude = toNum(lon, "longitude");
 
-        // ✅ Julian Day
+        const ut = hour + (minute / 60);
+
+        console.log("PARSED:", { year, month, day, ut, latitude, longitude });
+
+        // ✅ SET EPHE PATH
+        swisseph.setEphemerisPath(path.join(__dirname, "ephe"));
+
+        // ✅ JD
         const jd = swisseph.julianDay(year, month, day, ut);
 
-        if (isNaN(jd)) throw new Error("Invalid Julian Day");
+        if (!Number.isFinite(jd)) throw new Error("JD failed");
 
-        // ✅ Houses
-        const houses = swisseph.calculateHouses(jd, nLat, nLon);
+        console.log("JD:", jd);
+
+        // ✅ HOUSES
+        const houses = swisseph.calculateHouses(jd, latitude, longitude);
+
+        if (!houses || !Number.isFinite(houses.ascendant)) {
+            throw new Error("House calc failed");
+        }
 
         const asc = houses.ascendant;
-        if (isNaN(asc)) throw new Error("Ascendant error");
 
-        // ✅ Planets
-        const planetList = [
-            { id: swisseph.Planet.Sun, name: "Sun" },
-            { id: swisseph.Planet.Moon, name: "Moon" },
-            { id: swisseph.Planet.Mars, name: "Mars" },
-            { id: swisseph.Planet.Mercury, name: "Mercury" },
-            { id: swisseph.Planet.Jupiter, name: "Jupiter" },
-            { id: swisseph.Planet.Venus, name: "Venus" },
-            { id: swisseph.Planet.Saturn, name: "Saturn" },
-            { id: swisseph.Planet.MeanNode, name: "Rahu" }
+        // ✅ PLANETS SAFE LIST
+        const planetIds = [
+            swisseph.Planet.Sun,
+            swisseph.Planet.Moon,
+            swisseph.Planet.Mars,
+            swisseph.Planet.Mercury,
+            swisseph.Planet.Jupiter,
+            swisseph.Planet.Venus,
+            swisseph.Planet.Saturn,
+            swisseph.Planet.MeanNode
         ];
 
         const planets = [];
 
-        for (let p of planetList) {
+        for (let pid of planetIds) {
             let pos;
 
             try {
-                pos = swisseph.calculatePosition(jd, p.id);
-            } catch (e) {
-                console.error("Planet error:", p.name);
+                // 🔥 FORCE NUMBERS ONLY
+                pos = swisseph.calculatePosition(
+                    Number(jd),
+                    Number(pid)
+                );
+            } catch (err) {
+                console.error("Planet failed:", pid, err.message);
                 continue;
             }
 
-            if (!pos || isNaN(pos.longitude)) continue;
+            if (!pos || !Number.isFinite(pos.longitude)) {
+                console.log("Skipped planet:", pid);
+                continue;
+            }
 
-            const house = Math.floor(((pos.longitude - asc + 360) % 360) / 30) + 1;
+            const house =
+                Math.floor(((pos.longitude - asc + 360) % 360) / 30) + 1;
 
             planets.push({
-                name: p.name,
+                planet: pid,
                 longitude: pos.longitude,
                 house
-            });
-        }
-
-        // ✅ Add Ketu
-        const rahu = planets.find(p => p.name === "Rahu");
-
-        if (rahu) {
-            planets.push({
-                name: "Ketu",
-                longitude: (rahu.longitude + 180) % 360,
-                house: ((rahu.house + 6) % 12) || 12
             });
         }
 
@@ -89,12 +100,12 @@ async function getKundali(dob, time, lat, lon) {
             planets
         };
 
-    } catch (error) {
-        console.error("FINAL ERROR:", error.message);
+    } catch (err) {
+        console.error("FINAL ERROR:", err.message);
 
         return {
             success: false,
-            error: error.message
+            error: err.message
         };
     }
 }
