@@ -1,39 +1,38 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const { getKundali } = require("./astro");
+const { generateReport } = require("./interpreter");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
 app.use(bodyParser.json());
 
-// Test route
-app.get("/", (req, res) => {
-    res.send("Astrology API running 🚀");
-});
-
-// Main API
+// 🔥 MAIN API
 app.post("/kundali", async (req, res) => {
     try {
-        console.log("REQUEST BODY:", req.body); // ✅ DEBUG
+        console.log("REQUEST BODY:", req.body);
 
         const { dob, time, lat, lon } = req.body;
 
-        const result = await getKundali(dob, time, lat, lon);
+        const kundali = await getKundali(dob, time, lat, lon);
 
-        res.json(result);
+        if (!kundali.success) {
+            return res.json(kundali);
+        }
 
-    } catch (error) {
-        console.error("SERVER ERROR:", error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
+        const report = await generateReport(kundali);
+
+        res.send(report); // HTML output
+
+    } catch (err) {
+        console.error("SERVER ERROR:", err.message);
+        res.status(500).json({ error: err.message });
     }
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// HEALTH CHECK
+app.get("/", (req, res) => {
+    res.send("Jyotish API Running 🚀");
 });
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Server running on", PORT));
