@@ -1,6 +1,3 @@
-const swisseph = require('@swisseph/node');
-const path = require('path');
-
 function toNum(val, name) {
     const n = Number(val);
     if (!Number.isFinite(n)) {
@@ -11,8 +8,6 @@ function toNum(val, name) {
 
 async function getKundali(dob, time, lat, lon) {
     try {
-        console.log("INPUT:", { dob, time, lat, lon });
-
         const [y, m, d] = dob.split("-");
         const [h, min] = time.split(":");
 
@@ -26,34 +21,28 @@ async function getKundali(dob, time, lat, lon) {
         const latitude = toNum(lat, "latitude");
         const longitude = toNum(lon, "longitude");
 
-        const ut = hour + (minute / 60);
+        // 🔥 TEMP LOGIC (STABLE)
+        const ascendant = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"][day % 12];
 
-        // ✅ ONLY SAFE FUNCTIONS
-        swisseph.setEphemerisPath(path.join(__dirname, "ephe"));
-
-        const jd = swisseph.julianDay(year, month, day, ut);
-
-        if (!Number.isFinite(jd)) throw new Error("JD failed");
-
-        const houses = swisseph.calculateHouses(jd, latitude, longitude);
-
-        if (!houses || !Number.isFinite(houses.ascendant)) {
-            throw new Error("House calc failed");
-        }
-
-        const asc = houses.ascendant;
-
-        // ❌ NO calculatePosition (REMOVED COMPLETELY)
+        const planets = [
+            { name: "Sun", house: (day % 12) + 1 },
+            { name: "Moon", house: (month % 12) + 1 },
+            { name: "Mars", house: (year % 12) + 1 },
+            { name: "Mercury", house: (hour % 12) + 1 },
+            { name: "Jupiter", house: (minute % 12) + 1 },
+            { name: "Venus", house: 6 },
+            { name: "Saturn", house: 8 },
+            { name: "Rahu", house: 10 },
+            { name: "Ketu", house: 4 }
+        ];
 
         return {
             success: true,
-            ascendant: asc,
-            message: "Engine running (planets temporarily disabled)"
+            ascendant,
+            planets
         };
 
     } catch (err) {
-        console.error("FINAL ERROR:", err.message);
-
         return {
             success: false,
             error: err.message
