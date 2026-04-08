@@ -21,7 +21,7 @@ async function getKundali(dob, time, lat, lon) {
         const latitude = toNum(lat, "latitude");
         const longitude = toNum(lon, "longitude");
 
-        // 🔥 TEMP LOGIC (STABLE)
+        // 🔥 STABLE MOCK ENGINE (NO CRASH EVER)
         const ascendant = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"][day % 12];
 
         const planets = [
